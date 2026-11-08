@@ -1,0 +1,3015 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Windows XP · Планшет</title>
+<style>
+  * { box-sizing:border-box; user-select:none; -webkit-tap-highlight-color:transparent; font-family:'Tahoma', 'Segoe UI', sans-serif; }
+  html, body { touch-action:manipulation; }
+  body { margin:0; min-height:100vh; background:#000; display:flex; align-items:center;
+    justify-content:center; padding:12px; font-size:11px; overflow:hidden; }
+
+  .tablet { width:1024px; max-width:100%; height:100vh; max-height:720px;
+    background:#1a1a1a; border-radius:20px; padding:12px; position:relative;
+    box-shadow:0 20px 40px rgba(0,0,0,.8), inset 0 0 0 3px #444;
+    display:flex; flex-direction:column; overflow:hidden; }
+
+  .screen { position:relative; flex:1; border-radius:4px; overflow:hidden;
+    background:#3A6EA5; background-image:url('assets/обои1.png');
+    background-size:cover; background-position:center;
+    box-shadow:inset 0 0 0 2px #000; cursor:none; touch-action:none; min-height:0; }
+
+  .cursor-img { position:absolute; width:26px; height:26px; pointer-events:none; z-index:999999;
+    image-rendering:pixelated; }
+
+  .desktop { position:absolute; inset:0 0 32px 0; padding:8px; overflow:hidden; pointer-events:none; }
+
+  .grid-overlay { position:absolute; inset:0 0 32px 0; pointer-events:none; z-index:50; display:none; }
+  .grid-overlay.active { display:block; }
+  .grid-cell { position:absolute; width:76px; height:80px;
+    border:1px dashed rgba(255,255,255,.25); border-radius:4px; }
+
+  .icon { position:absolute; width:76px; display:flex; flex-direction:column; align-items:center;
+    gap:2px; padding:4px 2px; color:#fff; cursor:pointer; font-size:11px;
+    text-align:center; word-break:break-word; text-shadow:1px 1px 1px #000;
+    pointer-events:auto; z-index:10; }
+  .icon.hover { background:#0A246A; outline:1px dotted #fff; }
+  .icon.selected { background:#0A246A; outline:2px solid #fff; }
+  .icon.dragging { opacity:0.7; z-index:99999 !important; outline:1px dashed #fff; background:#0A246A; }
+  .icon .ico { width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+    font-size:30px; pointer-events:none; }
+  .icon .ico img { width:100%; height:100%; object-fit:contain; pointer-events:none; }
+  .icon .lbl { pointer-events:none; }
+
+  .window { position:absolute; background:#ECE9D8; border:1px solid #0054E3;
+    border-radius:7px 7px 0 0; box-shadow:2px 2px 8px #0008;
+    display:flex; flex-direction:column; overflow:hidden; z-index:100;
+    font-family:'Tahoma', sans-serif; }
+  .win-title { padding:3px 4px 3px 6px; height:22px;
+    background:linear-gradient(180deg, #0058EE 0%, #3A93FF 8%, #0054E3 40%, #0048CC 88%, #003CBB 100%);
+    color:#fff; font-size:11px; font-weight:bold;
+    display:flex; justify-content:space-between; align-items:center;
+    text-shadow:1px 1px 0 #003; border-radius:6px 6px 0 0; }
+  .win-title .wt-icon { display:flex; align-items:center; gap:5px; }
+  .win-title .wt-icon img { width:16px; height:16px; }
+  .win-controls { display:flex; gap:2px; }
+  .win-btn { width:21px; height:19px; background:#ECE9D8;
+    border:1px solid #fff; border-right-color:#808080; border-bottom-color:#808080;
+    box-shadow:inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
+    color:#000; font-size:11px; font-weight:bold;
+    display:flex; align-items:center; justify-content:center;
+    pointer-events:auto; cursor:pointer; font-family:'Tahoma', sans-serif; }
+  .win-btn:hover, .win-btn.hover { background:#D0D0D0; }
+  .win-btn.close { background:#E8A8A8; }
+  .win-btn.close:hover, .win-btn.close.hover { background:#E88A8A; }
+  .win-body { padding:4px; font-size:11px; flex:1; overflow:auto;
+    background:#ECE9D8; margin:0; border:2px inset #ECE9D8; }
+
+  .window.maximized { left:0 !important; top:0 !important; width:100% !important;
+    height:calc(100% - 32px) !important; border-radius:0 !important; z-index:9998 !important; }
+
+  .taskbar { position:absolute; bottom:0; left:0; right:0; height:32px;
+    background:linear-gradient(180deg, #245EDC 0%, #3A6EE0 8%, #2851D8 40%, #2356D9 88%, #1E45B8 100%);
+    border-top:2px solid #4A6EE0; z-index:900;
+    display:flex; align-items:center; padding:0 2px; gap:2px; }
+  .taskbar-start { height:24px; padding:0 10px 0 6px;
+    background:linear-gradient(180deg, #3AAE4E 0%, #2C9C3E 100%);
+    border:1px solid #1A5F2A; border-radius:0 8px 8px 0;
+    display:flex; align-items:center; gap:4px;
+    color:#fff; font-weight:bold; font-size:12px; font-style:italic;
+    text-shadow:1px 1px 0 #0A3010; cursor:pointer; pointer-events:auto; }
+  .taskbar-start:hover { background:linear-gradient(180deg, #4ABE5E 0%, #3CAC4E 100%); }
+  .taskbar-start svg { width:16px; height:16px; }
+
+  .taskbar-divider { width:2px; height:24px;
+    background:linear-gradient(180deg, transparent 0%, #4A6EE0 20%, #1E45B8 80%, transparent 100%);
+    margin:0 4px; }
+
+  .taskbar-pin { height:24px; min-width:24px; padding:0 6px;
+    background:#3A6EE0; border:1px solid #2356D9;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; pointer-events:auto; }
+  .taskbar-pin:hover { background:#4A7EE8; }
+  .taskbar-pin img { width:18px; height:18px; object-fit:contain; }
+
+  .taskbar-windows { display:flex; gap:2px; flex:1; overflow:hidden; }
+  .taskbar-item { height:22px; padding:0 8px; background:#3A6EE0;
+    border:1px solid #2356D9; display:flex; align-items:center; gap:4px;
+    color:#fff; font-size:11px; cursor:pointer; pointer-events:auto;
+    max-width:160px; overflow:hidden; white-space:nowrap; }
+  .taskbar-item:hover { background:#4A7EE8; }
+  .taskbar-item.active { background:#1E45B8; }
+  .taskbar-item img { width:14px; height:14px; }
+
+  .taskbar-tray { height:22px; padding:0 8px;
+    background:linear-gradient(180deg, #1E45B8 0%, #2B5BD8 30%, #3A6EE0 100%);
+    border:1px solid #2356D9; display:flex; align-items:center; gap:6px;
+    color:#fff; font-size:11px; }
+
+  .lang-btn { height:22px; padding:0 8px;
+    background:linear-gradient(180deg, #3A6EE0 0%, #2356D9 100%);
+    border:1px solid #2356D9; display:flex; align-items:center; gap:4px;
+    color:#fff; font-size:11px; font-weight:bold; cursor:pointer; pointer-events:auto;
+    font-family:'Tahoma', sans-serif; }
+  .lang-btn:hover, .lang-btn.hover { background:linear-gradient(180deg, #4A7EE8 0%, #3A6EE0 100%); }
+  .lang-btn .flag { font-size:14px; }
+
+  .start-menu { position:absolute; bottom:32px; left:0; width:380px;
+    background:#ECE9D8; border:1px solid #0054E3;
+    display:none; flex-direction:column; z-index:950; box-shadow:2px -2px 8px #0008; }
+  .start-menu.open { display:flex; }
+  .start-header { height:56px; background:linear-gradient(180deg, #0058EE 0%, #3A93FF 8%, #0054E3 40%, #0048CC 88%, #003CBB 100%);
+    color:#fff; display:flex; align-items:center; gap:8px; padding:0 10px;
+    font-size:14px; font-weight:bold; font-style:italic;
+    text-shadow:1px 1px 2px #000; }
+  .start-header .avatar { width:40px; height:40px; border-radius:4px;
+    background:#ECE9D8; display:flex; align-items:center; justify-content:center;
+    border:2px solid #fff; font-size:24px; }
+  .start-body { display:flex; padding:4px; min-height:300px; }
+  .start-left { width:180px; background:#fff; border:1px solid #808080; padding:4px 0; overflow-y:auto; max-height:400px; }
+  .start-right { width:180px; background:#D3E5FA; border:1px solid #808080; border-left:none; padding:4px 0; overflow-y:auto; max-height:400px; }
+  .start-item { display:flex; align-items:center; gap:8px; padding:4px 8px;
+    cursor:pointer; pointer-events:auto; color:#000; font-size:11px; }
+  .start-item:hover, .start-item.hover { background:#0A246A; color:#fff; }
+  .start-item .si-ico { width:24px; height:24px; display:flex; align-items:center; justify-content:center; }
+  .start-item .si-ico img { width:24px; height:24px; object-fit:contain; }
+  .start-footer { height:32px; background:linear-gradient(180deg, #3A6EE0 0%, #2356D9 100%);
+    display:flex; justify-content:flex-end; align-items:center; gap:6px; padding:0 8px; }
+  .start-footer button { background:#ECE9D8; border:1px solid #808080;
+    padding:3px 8px; font-size:11px; cursor:pointer; pointer-events:auto;
+    display:flex; align-items:center; gap:4px; font-family:'Tahoma', sans-serif; }
+  .start-footer button:hover, .start-footer button.hover { background:#D0D0D0; }
+
+  .xp-btn { background:#ECE9D8; border:1px solid #003C74;
+    padding:3px 12px; font-size:11px; font-family:'Tahoma', sans-serif;
+    cursor:pointer; pointer-events:auto; box-shadow:inset 1px 1px 0 #fff, inset -1px -1px 0 #808080; }
+  .xp-btn:hover, .xp-btn.hover { background:#D0D0D0; }
+  .xp-btn:active { box-shadow:inset 1px 1px 0 #808080, inset -1px -1px 0 #fff; }
+
+  .xp-toolbar { background:#ECE9D8; border-bottom:1px solid #808080;
+    padding:2px; display:flex; gap:2px; align-items:center; }
+  .xp-toolbar button { background:transparent; border:1px solid transparent;
+    padding:3px 6px; font-size:11px; cursor:pointer; pointer-events:auto;
+    font-family:'Tahoma', sans-serif; display:flex; align-items:center; gap:3px; }
+  .xp-toolbar button:hover, .xp-toolbar button.hover {
+    background:#ECE9D8; border:1px solid #808080;
+    box-shadow:inset 1px 1px 0 #fff, inset -1px -1px 0 #808080; }
+
+  .xp-explorer { display:flex; height:100%; background:#fff; }
+  .xp-explorer-left { width:160px; background:#D3E5FA; border-right:1px solid #808080;
+    padding:8px 4px; font-size:11px; }
+  .xp-explorer-left .xp-section { margin-bottom:12px; }
+  .xp-explorer-left .xp-section h4 { margin:0 0 4px; color:#215DC6;
+    font-size:11px; font-weight:bold; padding:2px 4px;
+    background:linear-gradient(90deg, #fff 0%, #D3E5FA 100%); }
+  .xp-explorer-left .xp-section ul { list-style:none; margin:0; padding:0 0 0 8px; }
+  .xp-explorer-left .xp-section li { padding:2px 4px; cursor:pointer; display:flex; gap:4px; align-items:center; }
+  .xp-explorer-left .xp-section li:hover { background:#0A246A; color:#fff; }
+  .xp-explorer-main { flex:1; background:#fff; padding:4px; overflow:auto;
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(80px,1fr));
+    gap:4px; align-content:flex-start; }
+  .xp-file { display:flex; flex-direction:column; align-items:center; gap:2px;
+    padding:4px; font-size:11px; cursor:pointer; text-align:center;
+    border:1px solid transparent; }
+  .xp-file:hover { background:#E0E8F8; border:1px dotted #215DC6; }
+  .xp-file .xf-ico { font-size:32px; width:36px; height:36px;
+    display:flex; align-items:center; justify-content:center; }
+  .xp-file .xf-ico img { width:100%; height:100%; object-fit:contain; }
+  .xp-status { height:20px; background:#ECE9D8; border-top:1px solid #808080;
+    padding:2px 8px; font-size:11px; display:flex; align-items:center; }
+
+  .notepad { width:100%; height:100%; resize:none; border:none;
+    padding:2px; font-family:'Courier New', monospace; font-size:12px;
+    background:#fff; outline:none; }
+
+  .calc-xp { background:#ECE9D8; padding:6px; display:flex; flex-direction:column; height:100%; }
+  .calc-display { background:#fff; border:2px inset #ECE9D8; padding:4px 8px;
+    text-align:right; font-size:18px; margin-bottom:6px; font-family:'Courier New', monospace;
+    min-height:30px; overflow:hidden; }
+  .calc-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; flex:1; }
+  .calc-grid button { padding:8px 0; font-size:13px; border:1px solid #003C74;
+    background:#ECE9D8; cursor:pointer; font-weight:bold;
+    box-shadow:inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
+    pointer-events:auto; font-family:'Tahoma', sans-serif; }
+  .calc-grid button.hover { background:#D0D0D0; }
+  .calc-grid button.op { color:#C00000; }
+  .calc-grid button.eq { color:#0000C0; }
+
+  .terminal { background:#000; color:#c0c0c0; font-family:'Courier New', monospace;
+    font-size:12px; padding:4px; height:100%; overflow-y:auto; outline:none; border:none; }
+  .terminal .line { white-space:pre-wrap; }
+  .terminal .prompt { color:#00ff00; }
+  .terminal .error { color:#ff5555; }
+  .terminal .info { color:#55aaff; }
+  .terminal input { background:transparent; border:none; color:#c0c0c0;
+    font-family:'Courier New', monospace; font-size:12px; width:calc(100% - 40px); outline:none; }
+
+  .game-dev { display:flex; flex-direction:column; height:100%; background:#ECE9D8; }
+  .game-tabs { display:flex; background:#ECE9D8; border-bottom:1px solid #808080; gap:1px; padding:2px 2px 0; }
+  .game-tab { padding:4px 12px; background:#D3E5FA; border:1px solid #808080; border-bottom:none;
+    font-size:11px; cursor:pointer; pointer-events:auto; border-radius:3px 3px 0 0; }
+  .game-tab.active { background:#ECE9D8; font-weight:bold; }
+  .game-tab:hover, .game-tab.hover { background:#E0E8F8; }
+  .game-panel { display:none; flex:1; overflow:auto; padding:4px; }
+  .game-panel.active { display:flex; flex-direction:column; }
+  .game-editor { width:100%; height:100%; border:2px inset #ECE9D8;
+    font-family:'Consolas', 'Courier New', monospace; font-size:12px; resize:none; outline:none; padding:4px; }
+  .game-toolbar { padding:4px; background:#ECE9D8; border-bottom:1px solid #808080;
+    display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
+  .preview-frame { flex:1; border:2px inset #ECE9D8; background:#fff; }
+  .preview-frame iframe { width:100%; height:100%; border:none; }
+
+  .pc-browser { display:flex; flex-direction:column; height:100%; background:#fff; }
+  .pc-toolbar { background:#ECE9D8; border-bottom:1px solid #808080;
+    padding:3px; display:flex; gap:3px; align-items:center; }
+  .pc-toolbar button { background:#ECE9D8; border:1px solid #003C74;
+    padding:3px 6px; border-radius:2px; font-size:11px; cursor:pointer;
+    box-shadow:inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
+    pointer-events:auto; font-family:'Tahoma', sans-serif; }
+  .pc-toolbar button:hover, .pc-toolbar button.hover { background:#D0D0D0; }
+  .pc-address { flex:1; background:#fff; border:2px inset #ECE9D8; padding:2px 6px;
+    display:flex; align-items:center; gap:4px; font-size:11px; }
+  .pc-address input { flex:1; border:none; outline:none; font-size:11px;
+    background:transparent; font-family:'Tahoma', sans-serif; }
+  .pc-content { flex:1; position:relative; background:#fff; overflow:hidden; }
+  .pc-content iframe { width:100%; height:100%; border:none; }
+  .pc-home { display:flex; flex-direction:column; align-items:center;
+    justify-content:center; padding:40px 20px; text-align:center;
+    background:#ECE9D8; height:100%; }
+  .pc-home-logo { font-size:56px; font-weight:bold;
+    font-family:'Times New Roman', serif; margin-bottom:20px; }
+  .pc-home-logo span:nth-child(1) { color:#0055EA; }
+  .pc-home-logo span:nth-child(2) { color:#FF0000; }
+  .pc-home-logo span:nth-child(3) { color:#FFCC00; }
+  .pc-home-logo span:nth-child(4) { color:#0055EA; }
+  .pc-home-logo span:nth-child(5) { color:#00AA00; }
+  .pc-home-logo span:nth-child(6) { color:#FF0000; }
+  .pc-home-search { display:flex; gap:4px; margin-bottom:20px; width:100%; max-width:400px; }
+  .pc-home-search input { flex:1; padding:4px 8px; border:2px inset #ECE9D8;
+    font-size:12px; font-family:'Tahoma', sans-serif; }
+  .pc-home-search button { padding:4px 12px; border:1px solid #003C74;
+    background:#ECE9D8; cursor:pointer; box-shadow:inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
+    pointer-events:auto; font-family:'Tahoma', sans-serif; }
+  .pc-home-links { display:flex; gap:16px; font-size:11px; }
+  .pc-home-links a { color:#0000EE; text-decoration:underline; cursor:pointer; }
+
+  .joystick-wrap { position:absolute; bottom:48px; left:16px; z-index:700;
+    display:flex; align-items:flex-end; gap:12px; pointer-events:none; }
+  .joystick { width:100px; height:100px; border-radius:50%; background:rgba(0,0,0,.5);
+    border:2px solid #ffffff44; position:relative; pointer-events:auto;
+    box-shadow:inset 0 0 20px #000a; touch-action:none; }
+  .joystick-stick { position:absolute; left:50%; top:50%; width:44px; height:44px;
+    border-radius:50%; background:radial-gradient(circle at 35% 35%,#d0d0e0,#5a5a7a);
+    transform:translate(-50%,-50%); box-shadow:0 3px 10px #000a; pointer-events:none; }
+
+  .mouse-buttons { display:flex; flex-direction:column; gap:6px; pointer-events:auto; }
+  .mouse-btn { background:linear-gradient(180deg,#4a4a6a,#2a2a3e); border:2px solid #6a6a8a;
+    color:#fff; padding:10px 16px; font-size:12px; font-family:'Tahoma', sans-serif;
+    font-weight:bold; cursor:pointer; pointer-events:auto;
+    box-shadow:0 3px 0 #1a1a2e, inset 0 1px 0 #8a8aaa; min-width:80px; text-align:center; }
+  .mouse-btn:hover, .mouse-btn.hover { background:linear-gradient(180deg,#5a5a7a,#3a3a4e); }
+  .mouse-btn:active { transform:translateY(3px); box-shadow:0 0 0 #1a1a2e; }
+  .mouse-btn.lkm { background:linear-gradient(180deg,#2e7d32,#1e5d22); border-color:#3e9d42; }
+  .mouse-btn.lkm:hover, .mouse-btn.lkm.hover { background:linear-gradient(180deg,#3ea043,#2e7d32); }
+  .mouse-btn.pkm { background:linear-gradient(180deg,#c62828,#8e1d1d); border-color:#e63946; }
+  .mouse-btn.pkm:hover, .mouse-btn.pkm.hover { background:linear-gradient(180deg,#e63946,#c62828); }
+  .mouse-btn.skm { background:linear-gradient(180deg,#1565c0,#0d47a1); border-color:#1e88e5; }
+  .mouse-btn.skm:hover, .mouse-btn.skm.hover { background:linear-gradient(180deg,#1e88e5,#1565c0); }
+
+  .kb-block { position:fixed; bottom:12px; left:50%; transform:translateX(-50%);
+    background:#2d2d2d; border-radius:10px; padding:4px 6px 5px;
+    box-shadow:inset 0 0 0 2px #444, 0 6px 20px rgba(0,0,0,0.6);
+    z-index:2000; width:680px; max-width:calc(100vw - 24px); user-select:none; }
+  .kb-block.hidden { display:none; }
+  .kb-header { display:flex; justify-content:space-between; align-items:center;
+    padding:0 4px 3px; color:#aaa; font-size:10px; cursor:grab; }
+  .kb-header:active { cursor:grabbing; }
+  .kb-header .kb-title { display:flex; align-items:center; gap:6px; }
+  .kb-header .drag-handle { display:inline-block; width:14px; height:14px;
+    background:repeating-linear-gradient(45deg, #888 0px, #888 2px, transparent 2px, transparent 4px);
+    border-radius:2px; }
+  .kb-toggle { background:#3a3a3a; color:#fff; border:1px solid #555;
+    padding:1px 8px; border-radius:8px; font-size:10px; cursor:pointer; pointer-events:auto; }
+  .kb-toggle.hover { background:#555; }
+  .keyboard { display:flex; flex-direction:column; gap:1px; }
+  .kb-row { display:flex; gap:1px; justify-content:center; }
+  .kb-key { background:#3c3c5a; color:#fff; border:none; border-radius:3px;
+    padding:3px 0; min-width:18px; flex:1; font-size:9px; font-weight:600;
+    box-shadow:0 1px 0 #1a1a2e; cursor:pointer; pointer-events:auto; transition:background 0.05s; }
+  .kb-key:active { background:#5a6a9a; transform:translateY(1px); }
+  .kb-key.hover { background:#5a6a9a; }
+  .kb-key.wide { flex:2; }
+  .kb-key.space { flex:8; }
+  .kb-key.fn { background:#252536; font-size:8px; flex:0 0 auto; min-width:22px; padding:2px 1px; }
+  .kb-key.mod { background:#2d2d44; font-size:8px; }
+
+  .hud { position:absolute; top:8px; left:8px; background:#000c; color:#fff;
+    padding:6px 12px; border-radius:16px; font-weight:700; z-index:600;
+    font-size:14px; display:none; pointer-events:none; }
+  .hud.show { display:block; }
+
+  .shutdown-screen { position:absolute; inset:0; background:#000; z-index:99998;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:#fff; font-size:16px; gap:12px; pointer-events:auto; }
+  .spinner { width:40px; height:40px; border:3px solid #333; border-top-color:#fff;
+    border-radius:50%; animation:spin 1s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .errwin { position:absolute; width:300px; background:#ECE9D8;
+    border:1px solid #0054E3; z-index:850; box-shadow:2px 2px 8px #0008; pointer-events:auto; }
+  .errwin .eh { padding:3px 6px; background:linear-gradient(180deg, #0058EE, #0048CC);
+    color:#fff; font-weight:bold; font-size:11px; }
+  .errwin .eb { padding:16px; font-size:11px; display:flex; gap:12px; align-items:center; }
+  .errwin .eb .eic { font-size:32px; }
+  .errwin .ef { padding:6px; text-align:center; background:#ECE9D8; border-top:1px solid #808080; }
+  .errwin button { padding:3px 20px; border:1px solid #003C74; background:#ECE9D8;
+    box-shadow:inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
+    font-family:'Tahoma', sans-serif; cursor:pointer; pointer-events:auto; font-size:11px; }
+
+  .icon-context-menu { font-family:'Tahoma', sans-serif; }
+
+  /* Снейк */
+  .snake-canvas { display:block; margin:0 auto; background:#1a1a1a; border:2px inset #ECE9D8; }
+
+  /* Ransom */
+  .ransom-video-layer { position:absolute; inset:0; z-index:50000; background:#000; pointer-events:none; }
+  .ransom-video-layer video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:grayscale(1) contrast(1.15); pointer-events:none; }
+  .thank-video-layer { position:absolute; inset:0; z-index:90000; background:#000; pointer-events:none; }
+  .thank-video-layer video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; pointer-events:none; }
+
+  .coin { position:absolute; width:32px; height:32px; z-index:55000;
+    filter:drop-shadow(0 3px 5px #000a); animation:coinBob .8s ease-in-out infinite alternate;
+    pointer-events:auto; }
+  .coin.hover { filter:drop-shadow(0 0 10px #ffd700); }
+  .coin img { width:100%; height:100%; object-fit:contain; }
+  .coin .fallback { width:32px; height:32px; border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#ffe066,#d4a017);
+    border:2px solid #8a6d00; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  @keyframes coinBob { from{transform:translateY(0);} to{transform:translateY(-5px);} }
+
+  @media (max-width:700px) {
+    .tablet { padding:6px; border-radius:14px; }
+    .icon { width:64px; font-size:10px; }
+    .icon .ico { width:30px; height:30px; }
+    .joystick-wrap { bottom:40px; left:8px; }
+    .joystick { width:80px; height:80px; }
+    .joystick-stick { width:36px; height:36px; }
+    .mouse-btn { padding:8px 12px; font-size:11px; min-width:64px; }
+    .kb-block { width:calc(100vw - 12px); }
+    .kb-key { padding:2px 0; font-size:8px; min-width:14px; }
+  }
+</style>
+</head>
+<body>
+<div class="tablet" id="tablet">
+  <div class="screen" id="screen">
+    <div class="desktop" id="desktop"></div>
+    <div class="grid-overlay" id="gridOverlay"></div>
+    <div class="hud" id="hud">🪙 Монеты: <span id="coinCount">0</span> / 50</div>
+
+    <div class="start-menu" id="startMenu">
+      <div class="start-header">
+        <div class="avatar">👤</div>
+        <div id="startUserName">Пользователь</div>
+      </div>
+      <div class="start-body">
+        <div class="start-left" id="startLeft"></div>
+        <div class="start-right" id="startRight"></div>
+      </div>
+      <div class="start-footer">
+        <button id="startLogoff">🔒 <span id="txtLogoff">Выход</span></button>
+        <button id="startShutdown">⏻ <span id="txtShutdown">Выключить</span></button>
+      </div>
+    </div>
+
+    <div class="taskbar" id="taskbar">
+      <div class="taskbar-start" id="taskbarStart">
+        <svg viewBox="0 0 24 24" width="16" height="16">
+          <rect x="0" y="0" width="11" height="11" fill="#fff"/>
+          <rect x="13" y="0" width="11" height="11" fill="#fff"/>
+          <rect x="0" y="13" width="11" height="11" fill="#fff"/>
+          <rect x="13" y="13" width="11" height="11" fill="#fff"/>
+        </svg>
+        <span id="txtStart">пуск</span>
+      </div>
+      <div class="taskbar-divider"></div>
+      <div class="taskbar-windows" id="taskbarWindows"></div>
+      <div class="taskbar-divider"></div>
+      <div class="taskbar-pin" data-app="explorer" title="Проводник"><img src="assets/иконка_проводник.png" onerror="this.outerHTML='📁'"></div>
+      <div class="taskbar-pin" data-app="browser" title="Google XP"><img src="assets/иконка_google.png" onerror="this.outerHTML='🌐'"></div>
+      <div class="taskbar-pin" data-app="google_pc" title="Google ПК"><img src="assets/иконка_браузер.png" onerror="this.outerHTML='🖥️'"></div>
+      <div class="taskbar-pin" data-app="terminal" title="Терминал"><img src="assets/иконка_терминал.png" onerror="this.outerHTML='💻'"></div>
+      <div class="taskbar-pin" data-app="firefox" title="Firefox"><img src="assets/иконка_firefox.png" onerror="this.outerHTML='🦊'"></div>
+      <div class="taskbar-tray">
+        <button class="lang-btn" id="langBtn" title="Сменить язык / Change language">
+          <span class="flag" id="langFlag">🇷🇺</span>
+          <span id="langCode">RU</span>
+        </button>
+        <span>🔊</span>
+        <span id="trayClock">00:00</span>
+      </div>
+    </div>
+
+    <div class="joystick-wrap">
+      <div class="joystick" id="joystick"><div class="joystick-stick" id="stick"></div></div>
+      <div class="mouse-buttons">
+        <button class="mouse-btn lkm" id="lkmBtn">ЛКМ</button>
+        <button class="mouse-btn pkm" id="pkmBtn">ПКМ</button>
+        <button class="mouse-btn skm" id="skmBtn">СКМ</button>
+      </div>
+      <div class="mouse-buttons">
+        <button class="mouse-btn" id="createAppBtn">✨ <span id="txtCreate">Создать</span></button>
+      </div>
+    </div>
+
+    <img class="cursor-img" id="cursor" src="assets/мышь.png"
+         style="left:200px;top:200px;"
+         onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 28%22><path d=%22M2 2 L2 22 L7 17 L10 25 L13 24 L10 16 L17 16 Z%22 fill=%22white%22 stroke=%22black%22 stroke-width=%221.5%22/></svg>'">
+  </div>
+
+  <div class="kb-block" id="kbBlock">
+    <div class="kb-header" id="kbHeader">
+      <div class="kb-title">
+        <span class="drag-handle"></span>
+        <span id="txtKeyboard">⌨ Клавиатура</span>
+      </div>
+      <button class="kb-toggle" id="kbToggle">Скрыть</button>
+    </div>
+    <div class="keyboard" id="keyboard"></div>
+  </div>
+  <div class="kb-show-wrap" id="kbShowWrap" hidden style="position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:2000;">
+    <button class="kb-toggle" id="kbShowBtn">⌨ Показать клавиатуру</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  // ===== ЛОКАЛИЗАЦИЯ =====
+  const translations = {
+    ru: {
+      start: 'пуск', user: 'Пользователь', logoff: 'Выход', shutdown: 'Выключить',
+      create: 'Создать', keyboard: '⌨ Клавиатура', hide: 'Скрыть', show: 'Показать клавиатуру',
+      apps: {
+        computer: 'Мой компьютер', explorer: 'Проводник', disk: 'Диск C:',
+        notepad: 'Блокнот', calc: 'Калькулятор', browser: 'Google XP',
+        google_pc: 'Google ПК', terminal: 'Терминал', firefox: 'Firefox',
+        gamedev: 'HTML-Игры', play: 'Play', wallpaper: 'Обои', trash: 'Корзина'
+      },
+      menu: { myDocs: 'Мои документы', myComputer: 'Мой компьютер', createSite: 'Создать сайт',
+        createGame: 'Создать игру', saveNow: 'Сохранить сейчас', controlPanel: 'Панель управления' },
+      trash: { empty: 'Корзина пуста', clear: 'Очистить корзину', restore: 'Восстановить всё',
+        confirmClear: 'Очистить корзину?', confirmRestore: 'Восстановить' },
+      explorer: { newFile: 'Создать файл', newSite: 'Создать сайт', newFolder: 'Создать папку',
+        otherPlaces: 'Другие места', desktop: 'Рабочий стол', docs: 'Документы',
+        pics: 'Изображения', music: 'Музыка', downloads: 'Загрузки',
+        myComputer: 'Мой компьютер', localDisk: 'Локальный диск (C:)', diskD: 'Диск (D:)',
+        diskE: 'Диск (E:)', dvd: 'DVD-диск (F:)', trash: 'Корзина', ready: 'Готово', emptyFolder: 'Пусто' },
+      system: { noSave: 'Не удалось сохранить', saved: 'Данные сохранены',
+        whatsNew: 'ЧТО_НОВОГО.txt', confirmDelete: 'Удалить', toTrash: 'в корзину?',
+        restoreItem: 'Восстановить', siteCreated: 'Сайт создан!', gameSaved: 'Игра сохранена',
+        programCreated: 'Программа создана!', fileCreated: 'Файл создан',
+        logoutDone: 'Выход из системы выполнен', welcome: 'Добро пожаловать',
+        ransomDenied: 'Отказано в доступе! Ransom нельзя удалить.' },
+      dialog: { createWhat: 'Что создать?', app: 'Приложение (иконка)', program: 'HTML/JS программа',
+        site: 'Сайт', name: 'Название', emoji: 'Эмодзи', htmlCode: 'HTML/JS код',
+        siteName: 'Название сайта', fileName: 'Имя файла', confirmClearAll: 'Очистить все данные?' },
+      terminal: { help: 'Команды: help, dir, echo, cls, ver, date, exit, sites, save, clear',
+        noSites: 'Нет созданных сайтов', saved: 'Данные сохранены в localStorage',
+        version: 'Windows 34 v2.2 [Build 2026]',
+        notCommand: 'не является внутренней или внешней командой' }
+    },
+    en: {
+      start: 'start', user: 'User', logoff: 'Log off', shutdown: 'Shut down',
+      create: 'Create', keyboard: '⌨ Keyboard', hide: 'Hide', show: 'Show keyboard',
+      apps: {
+        computer: 'My Computer', explorer: 'Explorer', disk: 'Disk C:',
+        notepad: 'Notepad', calc: 'Calculator', browser: 'Google XP',
+        google_pc: 'Google PC', terminal: 'Terminal', firefox: 'Firefox',
+        gamedev: 'HTML Games', play: 'Play', wallpaper: 'Wallpaper', trash: 'Recycle Bin'
+      },
+      menu: { myDocs: 'My Documents', myComputer: 'My Computer', createSite: 'Create website',
+        createGame: 'Create game', saveNow: 'Save now', controlPanel: 'Control Panel' },
+      trash: { empty: 'Recycle Bin is empty', clear: 'Empty Recycle Bin', restore: 'Restore all',
+        confirmClear: 'Empty Recycle Bin?', confirmRestore: 'Restore' },
+      explorer: { newFile: 'New file', newSite: 'New website', newFolder: 'New folder',
+        otherPlaces: 'Other places', desktop: 'Desktop', docs: 'Documents',
+        pics: 'Pictures', music: 'Music', downloads: 'Downloads',
+        myComputer: 'My Computer', localDisk: 'Local Disk (C:)', diskD: 'Disk (D:)',
+        diskE: 'Disk (E:)', dvd: 'DVD Drive (F:)', trash: 'Recycle Bin', ready: 'Ready', emptyFolder: 'Empty' },
+      system: { noSave: 'Failed to save', saved: 'Data saved',
+        whatsNew: 'WHATS_NEW.txt', confirmDelete: 'Delete', toTrash: 'to Recycle Bin?',
+        restoreItem: 'Restore', siteCreated: 'Website created!', gameSaved: 'Game saved',
+        programCreated: 'Program created!', fileCreated: 'File created',
+        logoutDone: 'Logged off', welcome: 'Welcome',
+        ransomDenied: 'Access denied! Ransom cannot be deleted.' },
+      dialog: { createWhat: 'What to create?', app: 'Application (icon)', program: 'HTML/JS program',
+        site: 'Website', name: 'Name', emoji: 'Emoji', htmlCode: 'HTML/JS code',
+        siteName: 'Site name', fileName: 'File name', confirmClearAll: 'Clear all data?' },
+      terminal: { help: 'Commands: help, dir, echo, cls, ver, date, exit, sites, save, clear',
+        noSites: 'No websites created', saved: 'Data saved to localStorage',
+        version: 'Windows 34 v2.2 [Build 2026]',
+        notCommand: 'is not recognized as an internal or external command' }
+    }
+  };
+
+  let currentLang = localStorage.getItem('windows34_lang') || 'ru';
+  function t(key) {
+    const parts = key.split('.');
+    let val = translations[currentLang];
+    for (const p of parts) {
+      if (val && val[p] !== undefined) val = val[p];
+      else return key;
+    }
+    return val;
+  }
+  function tObj(key) {
+    const parts = key.split('.');
+    let val = translations[currentLang];
+    for (const p of parts) {
+      if (val && val[p] !== undefined) val = val[p];
+      else return null;
+    }
+    return val;
+  }
+
+  // ===== АУДИО =====
+  const audioBoot = new Audio('assets/включение_windows.mp3');
+  const audioShutdown = new Audio('assets/выключение_windows.mp3');
+  audioBoot.volume = 0.4;
+  audioShutdown.volume = 0.4;
+  document.addEventListener('click', function playBoot() {
+    if (!sessionStorage.getItem('bootPlayed')) {
+      sessionStorage.setItem('bootPlayed', '1');
+      audioBoot.play().catch(() => {});
+    }
+    document.removeEventListener('click', playBoot);
+  });
+
+  const screen  = document.getElementById('screen');
+  const desktop = document.getElementById('desktop');
+  const cursor  = document.getElementById('cursor');
+  const hud = document.getElementById('hud');
+  const coinCountEl = document.getElementById('coinCount');
+  const joystick = document.getElementById('joystick');
+  const stick = document.getElementById('stick');
+  const keyboard = document.getElementById('keyboard');
+  const kbBlock = document.getElementById('kbBlock');
+  const kbToggle = document.getElementById('kbToggle');
+  const kbHeader = document.getElementById('kbHeader');
+  const kbShowWrap = document.getElementById('kbShowWrap');
+  const kbShowBtn = document.getElementById('kbShowBtn');
+  const startMenu = document.getElementById('startMenu');
+  const taskbarStart = document.getElementById('taskbarStart');
+  const taskbarWindows = document.getElementById('taskbarWindows');
+  const gridOverlay = document.getElementById('gridOverlay');
+
+  let activeWindow = null;
+
+  function isInteractive(el) {
+    return el.closest('.joystick, .mouse-buttons, .keyboard, .kb-block, .kb-toggle, button, input, textarea, select, .win-title, .code-editor, .game-editor, .notepad, iframe, a, .em-btn, .taskbar, .start-menu, .snake-canvas');
+  }
+  screen.addEventListener('touchstart', e => { if (!isInteractive(e.target)) e.preventDefault(); }, {passive:false});
+  screen.addEventListener('mousedown', e => { if (!isInteractive(e.target)) e.preventDefault(); });
+
+  function disableNativeKeyboard(input) {
+    if (!input) return;
+    input.setAttribute('inputmode', 'none');
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('autocorrect', 'off');
+    input.setAttribute('autocapitalize', 'off');
+    input.setAttribute('spellcheck', 'false');
+    input.addEventListener('focus', (e) => {
+      document.querySelectorAll('[data-focused="1"]').forEach(el => {
+        if (el !== input) el.dataset.focused = '0';
+      });
+      input.dataset.focused = '1';
+      if (input.hasAttribute('readonly')) input.removeAttribute('readonly');
+    });
+    input.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('[data-focused="1"]').forEach(el => {
+        if (el !== input) el.dataset.focused = '0';
+      });
+      input.dataset.focused = '1';
+      if (input.hasAttribute('readonly')) input.removeAttribute('readonly');
+    });
+  }
+
+  const originalCreateElement = document.createElement.bind(document);
+  document.createElement = function(tag) {
+    const el = originalCreateElement(tag);
+    if (tag === 'input' || tag === 'textarea') {
+      setTimeout(() => disableNativeKeyboard(el), 0);
+    }
+    return el;
+  };
+
+  function updateClock() {
+    const now = new Date();
+    const t = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('trayClock').textContent = t;
+  }
+  updateClock(); setInterval(updateClock, 10000);
+
+  // ===== СЕТКА =====
+  const GRID_X = 8;
+  const GRID_Y = 8;
+  const CELL_W = 80;
+  const CELL_H = 85;
+  const COLS = 12;
+  const ROWS = 6;
+
+  function snapToGrid(x, y) {
+    const col = Math.round((x - GRID_X) / CELL_W);
+    const row = Math.round((y - GRID_Y) / CELL_H);
+    const clampedCol = Math.max(0, Math.min(COLS - 1, col));
+    const clampedRow = Math.max(0, Math.min(ROWS - 1, row));
+    return { col: clampedCol, row: clampedRow, x: GRID_X + clampedCol * CELL_W, y: GRID_Y + clampedRow * CELL_H };
+  }
+
+  function drawGrid() {
+    gridOverlay.innerHTML = '';
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        cell.style.left = (GRID_X + c * CELL_W) + 'px';
+        cell.style.top = (GRID_Y + r * CELL_H) + 'px';
+        gridOverlay.appendChild(cell);
+      }
+    }
+  }
+
+  // ===== КУРСОР =====
+  let mx = 200, my = 200;
+  const BASE_STEP = 8;
+  let hoveredEl = null;
+  let hoverFrameId = null;
+  let selectedIcon = null;
+
+  function scheduleHover() {
+    if (hoverFrameId) return;
+    hoverFrameId = requestAnimationFrame(() => {
+      hoverFrameId = null;
+      updateHover();
+    });
+  }
+
+  function updateCursor() {
+    const r = screen.getBoundingClientRect();
+    mx = Math.max(0, Math.min(mx, r.width  - 26));
+    my = Math.max(0, Math.min(my, r.height - 26));
+    cursor.style.left = mx + 'px';
+    cursor.style.top  = my + 'px';
+    scheduleHover();
+  }
+
+  function updateHover() {
+    if (hoveredEl) { hoveredEl.classList.remove('hover'); hoveredEl = null; }
+    if (dragState) { cursor.src = cursor.dataset.fist || cursor.dataset.normal; return; }
+    cursor.src = cursor.dataset.normal || 'assets/мышь.png';
+    const rect = screen.getBoundingClientRect();
+    const px = rect.left + mx + 12;
+    const py = rect.top  + my + 12;
+    let el = document.elementFromPoint(px, py);
+    if (!el || el === cursor || el === screen) return;
+    const target = el.closest('.icon, button, .win-btn, .xp-file, .xp-btn, .win-title, .pc-toolbar button, .pc-home-links a, .taskbar-item, .taskbar-start, .taskbar-pin, .start-item, .game-tab, .xp-section li, .kb-key, .kb-toggle, .lang-btn, .snake-canvas');
+    if (target) {
+      target.classList.add('hover');
+      hoveredEl = target;
+      if (cursor.dataset.pointer) cursor.src = cursor.dataset.pointer;
+      const win = target.closest('.window');
+      if (win) activeWindow = win;
+    }
+  }
+
+  cursor.dataset.normal  = 'assets/мышь.png';
+  cursor.dataset.pointer = 'assets/палец.png';
+  cursor.dataset.fist    = 'assets/кулачок.png';
+
+  function moveCursor(dx, dy) {
+    const wpWin = document.querySelector('.window[data-app="wallpaper"]');
+    if (wpWin && !dragState) {
+      if (dx > 4) { setWallpaper(wpIndex + 1); refreshWallpaperThumbs(); return; }
+      if (dx < -4) { setWallpaper(wpIndex - 1); refreshWallpaperThumbs(); return; }
+    }
+    mx += dx; my += dy;
+    if (dragState && dragState.el) {
+      const newX = mx - dragState.offsetX;
+      const newY = my - dragState.offsetY;
+      dragState.el.style.left = Math.max(0, newX) + 'px';
+      dragState.el.style.top  = Math.max(0, newY) + 'px';
+    }
+    updateCursor();
+  }
+
+  let joyActive = false;
+  const JOY_RADIUS = 36;
+  function moveStick(cx, cy) {
+    const rect = joystick.getBoundingClientRect();
+    const dx = cx - (rect.left + rect.width/2);
+    const dy = cy - (rect.top + rect.height/2);
+    const dist = Math.hypot(dx, dy);
+    const k = dist > JOY_RADIUS ? JOY_RADIUS/dist : 1;
+    stick.style.transform = `translate(calc(-50% + ${dx*k}px), calc(-50% + ${dy*k}px))`;
+    if (dist > 10) {
+      const speed = BASE_STEP * Math.min(dist / JOY_RADIUS, 1);
+      moveCursor((dx/dist) * speed, (dy/dist) * speed);
+    }
+  }
+  function resetStick() { stick.style.transform = 'translate(-50%,-50%)'; }
+
+  joystick.addEventListener('mousedown', e => { joyActive = true; e.preventDefault(); e.stopPropagation(); moveStick(e.clientX, e.clientY); });
+  joystick.addEventListener('touchstart', e => { joyActive = true; e.preventDefault(); e.stopPropagation(); const t=e.touches[0]; moveStick(t.clientX, t.clientY); }, {passive:false});
+  window.addEventListener('mousemove', e => { if (joyActive) moveStick(e.clientX, e.clientY); });
+  window.addEventListener('touchmove', e => { if (joyActive) { e.preventDefault(); const t=e.touches[0]; moveStick(t.clientX, t.clientY); } }, {passive:false});
+  window.addEventListener('mouseup', () => { joyActive = false; resetStick(); });
+  window.addEventListener('touchend', () => { joyActive = false; resetStick(); });
+
+  // ===== ПЕРЕТАСКИВАНИЕ =====
+  let dragState = null;
+  let pkmHoldTimer = null;
+  let pkmHoldStart = 0;
+  let lastPkmClickTime = 0;
+  const HOLD_DURATION = 5000;
+
+  function startHoldTimer(el) {
+    cancelHoldTimer();
+    pkmHoldStart = Date.now();
+    const progress = document.createElement('div');
+    progress.style.cssText = `position:absolute;left:${parseInt(el.style.left)}px;top:${parseInt(el.style.top) - 6}px;width:${el.offsetWidth}px;height:4px;background:rgba(0,0,0,0.5);border-radius:2px;z-index:100000;overflow:hidden;`;
+    const bar = document.createElement('div');
+    bar.style.cssText = `height:100%;background:#4cc2ff;width:0%;transition:width 0.1s linear;`;
+    progress.appendChild(bar);
+    progress.id = 'holdProgress';
+    screen.appendChild(progress);
+    pkmHoldTimer = setInterval(() => {
+      const elapsed = Date.now() - pkmHoldStart;
+      const percent = Math.min(100, (elapsed / HOLD_DURATION) * 100);
+      bar.style.width = percent + '%';
+      if (elapsed >= HOLD_DURATION) {
+        cancelHoldTimer();
+        startDragWithFist(el);
+      }
+    }, 50);
+  }
+
+  function cancelHoldTimer() {
+    if (pkmHoldTimer) { clearInterval(pkmHoldTimer); pkmHoldTimer = null; }
+    const prog = document.getElementById('holdProgress');
+    if (prog) prog.remove();
+  }
+
+  function startDragWithFist(el) {
+    if (dragState) return;
+    const elX = parseInt(el.style.left) || 0;
+    const elY = parseInt(el.style.top) || 0;
+    dragState = { el: el, offsetX: mx - elX, offsetY: my - elY };
+    el.classList.add('dragging');
+    cursor.src = cursor.dataset.fist || cursor.dataset.normal;
+    gridOverlay.classList.add('active');
+    updateHover();
+  }
+
+  function endDrag() {
+    if (!dragState) return;
+    const el = dragState.el;
+    const id = el.dataset.appId || el.dataset.fileId || el.dataset.installedId || el.dataset.siteId;
+    const snapped = snapToGrid(parseInt(el.style.left), parseInt(el.style.top));
+    el.style.left = snapped.x + 'px';
+    el.style.top  = snapped.y + 'px';
+    if (id) {
+      iconPositions[id] = { col: snapped.col, row: snapped.row, x: snapped.x, y: snapped.y };
+      syncSave();
+    }
+    el.classList.remove('dragging');
+    dragState = null;
+    cursor.src = cursor.dataset.normal;
+    gridOverlay.classList.remove('active');
+    updateHover();
+  }
+
+  // ===== ЛКМ / ПКМ / СКМ =====
+  function doLKM() {
+    if (dragState) { endDrag(); return; }
+    if (!hoveredEl) return;
+    if (hoveredEl.classList.contains('icon')) {
+      // RANSOM НЕЛЬЗЯ УДАЛИТЬ
+      const app = hoveredEl._app;
+      if (app && app.id === 'ransom') {
+        alert('⛔ ' + t('system.ransomDenied'));
+        return;
+      }
+      if (selectedIcon === hoveredEl) {
+        selectedIcon.classList.remove('selected');
+        selectedIcon = null;
+        const file = hoveredEl._file;
+        const inst = hoveredEl._installed;
+        const site = hoveredEl._site;
+        if (app) deleteIconToTrash(app);
+        else if (file) deleteFile(file);
+        else if (inst) deleteInstalledApp(inst);
+        else if (site) deleteSite(site);
+        return;
+      }
+      if (selectedIcon) selectedIcon.classList.remove('selected');
+      selectedIcon = hoveredEl;
+      hoveredEl.classList.add('selected');
+      return;
+    }
+    if (hoveredEl.tagName === 'INPUT' || hoveredEl.tagName === 'TEXTAREA') {
+      hoveredEl.dataset.focused = '1';
+      hoveredEl.focus();
+      return;
+    }
+    hoveredEl.click();
+  }
+
+  function doPKM() {
+    if (!hoveredEl) return;
+    if (hoveredEl.classList.contains('icon')) {
+      const now = Date.now();
+      const timeSinceLast = now - lastPkmClickTime;
+      lastPkmClickTime = now;
+      if (timeSinceLast < 500 && timeSinceLast > 50) {
+        cancelHoldTimer();
+        const app = hoveredEl._app;
+        const file = hoveredEl._file;
+        const inst = hoveredEl._installed;
+        const site = hoveredEl._site;
+        if (app) openApp(app);
+        else if (file) openFile(file);
+        else if (inst) launchInstalledApp(inst);
+        else if (site) openSite(site);
+        return;
+      }
+      startHoldTimer(hoveredEl);
+      return;
+    }
+    if (hoveredEl.tagName === 'BUTTON' || hoveredEl.tagName === 'A' || hoveredEl.tagName === 'CANVAS') {
+      hoveredEl.click();
+    }
+  }
+
+  function doSKM() { scrollUnderCursor(); }
+
+  document.getElementById('lkmBtn').onclick = (e) => { e.stopPropagation(); doLKM(); };
+  document.getElementById('pkmBtn').onclick = (e) => { e.stopPropagation(); doPKM(); };
+  document.getElementById('skmBtn').onclick = (e) => { e.stopPropagation(); doSKM(); };
+
+  function scrollUnderCursor() {
+    if (!hoveredEl) {
+      if (activeWindow) {
+        const b = activeWindow.querySelector('.win-body');
+        if (b) b.scrollBy({ top: 80, behavior: 'smooth' });
+      }
+      return;
+    }
+    let el = hoveredEl;
+    while (el && el !== document.body) {
+      if (el.scrollHeight > el.clientHeight && el.clientHeight > 0) {
+        el.scrollBy({ top: 80, behavior: 'smooth' });
+        return;
+      }
+      el = el.parentElement;
+    }
+  }
+
+  screen.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if (activeWindow) {
+      const b = activeWindow.querySelector('.win-body');
+      if (b) b.scrollBy({ top: e.deltaY > 0 ? 50 : -50, behavior: 'smooth' });
+    }
+  }, {passive:false});
+
+  // ===== КЛАВИАТУРА =====
+  const kbLayoutRU = [
+    ['1','2','3','4','5','6','7','8','9','0','-','=','Backspace'],
+    ['й','ц','у','к','е','н','г','ш','щ','з','х','ъ','\\'],
+    ['ф','ы','в','а','п','р','о','л','д','ж','э','Enter'],
+    ['я','ч','с','м','и','т','ь','б','ю','.',',','?']
+  ];
+  const kbLayoutEN = [
+    ['1','2','3','4','5','6','7','8','9','0','-','=','Backspace'],
+    ['q','w','e','r','t','y','u','i','o','p','[',']','\\'],
+    ['a','s','d','f','g','h','j','k','l',';','\'','Enter'],
+    ['z','x','c','v','b','n','m',',','.','/','?']
+  ];
+  const fnLayout = ['F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12'];
+
+  function buildKeyboard() {
+    keyboard.innerHTML = '';
+    const fnRow = document.createElement('div');
+    fnRow.className = 'kb-row';
+    fnLayout.forEach(k => {
+      const b = document.createElement('button');
+      b.className = 'kb-key fn'; b.textContent = k; b.dataset.key = k;
+      fnRow.appendChild(b);
+    });
+    keyboard.appendChild(fnRow);
+
+    const modRow = document.createElement('div');
+    modRow.className = 'kb-row';
+    ['Esc','Tab','Alt','Ctrl'].forEach(k => {
+      const b = document.createElement('button');
+      b.className = 'kb-key mod'; b.textContent = k; b.dataset.key = k;
+      modRow.appendChild(b);
+    });
+    keyboard.appendChild(modRow);
+
+    const kbLayout = currentLang === 'ru' ? kbLayoutRU : kbLayoutEN;
+    kbLayout.forEach(row => {
+      const r = document.createElement('div');
+      r.className = 'kb-row';
+      row.forEach(k => {
+        const b = document.createElement('button');
+        b.className = 'kb-key';
+        if (k === 'Backspace' || k === 'Enter') b.classList.add('wide');
+        b.textContent = k; b.dataset.key = k;
+        r.appendChild(b);
+      });
+      keyboard.appendChild(r);
+    });
+
+    const last = document.createElement('div');
+    last.className = 'kb-row';
+    last.innerHTML = `<button class="kb-key space" data-key=" ">${currentLang === 'ru' ? 'пробел' : 'space'}</button>`;
+    keyboard.appendChild(last);
+
+    keyboard.querySelectorAll('.kb-key').forEach(b => {
+      b.onclick = (e) => { e.stopPropagation(); typeKey(b.dataset.key); };
+    });
+  }
+
+  function getActiveInput() {
+    const el = document.activeElement;
+    if (el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) return el;
+    const focused = document.querySelector('[data-focused="1"]');
+    if (focused && (focused.tagName === 'TEXTAREA' || focused.tagName === 'INPUT')) return focused;
+    if (activeWindow) {
+      const inp = activeWindow.querySelector('textarea:not([disabled]), input:not([disabled])');
+      if (inp) { inp.dataset.focused = '1'; return inp; }
+    }
+    const allInputs = document.querySelectorAll('.window textarea, .window input');
+    if (allInputs.length > 0) return allInputs[allInputs.length - 1];
+    return null;
+  }
+
+  function typeKey(key) {
+    if (key === 'F11') {
+      if (activeWindow) activeWindow.classList.toggle('maximized');
+      return;
+    }
+    if (['F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F12','Esc','Tab','Alt','Ctrl'].includes(key)) return;
+    const input = getActiveInput();
+    if (!input) return;
+    if (input.hasAttribute('readonly')) input.removeAttribute('readonly');
+    try { input.focus(); } catch(e) {}
+    input.dataset.focused = '1';
+
+    if (key === 'Backspace') {
+      const s = input.selectionStart || 0;
+      if (s > 0) {
+        input.value = input.value.slice(0, s-1) + input.value.slice(input.selectionEnd);
+        input.selectionStart = input.selectionEnd = s-1;
+      }
+    } else if (key === 'Enter') {
+      if (input.tagName === 'TEXTAREA') {
+        const s = input.selectionStart || 0;
+        input.value = input.value.slice(0, s) + '\n' + input.value.slice(input.selectionEnd);
+        input.selectionStart = input.selectionEnd = s+1;
+      } else {
+        input.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', bubbles:true}));
+      }
+    } else {
+      const s = input.selectionStart || 0;
+      input.value = input.value.slice(0, s) + key + input.value.slice(input.selectionEnd);
+      input.selectionStart = input.selectionEnd = s+key.length;
+    }
+    input.dataset.focused = '1';
+  }
+
+  kbToggle.onclick = (e) => { e.stopPropagation(); kbBlock.classList.add('hidden'); kbShowWrap.hidden = false; };
+  kbShowBtn.onclick = (e) => { e.stopPropagation(); kbBlock.classList.remove('hidden'); kbShowWrap.hidden = true; };
+
+  let kbDrag = null;
+  kbHeader.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.kb-toggle')) return;
+    e.preventDefault(); e.stopPropagation();
+    const rect = kbBlock.getBoundingClientRect();
+    kbDrag = { offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top };
+    kbBlock.style.bottom = 'auto';
+    kbBlock.style.left = rect.left + 'px';
+    kbBlock.style.top = rect.top + 'px';
+    kbBlock.style.transform = 'none';
+  });
+
+  kbHeader.addEventListener('touchstart', (e) => {
+    if (e.target.closest('.kb-toggle')) return;
+    e.preventDefault(); e.stopPropagation();
+    const t = e.touches[0];
+    const rect = kbBlock.getBoundingClientRect();
+    kbDrag = { offsetX: t.clientX - rect.left, offsetY: t.clientY - rect.top };
+    kbBlock.style.bottom = 'auto';
+    kbBlock.style.left = rect.left + 'px';
+    kbBlock.style.top = rect.top + 'px';
+    kbBlock.style.transform = 'none';
+  }, {passive:false});
+
+  window.addEventListener('mousemove', (e) => {
+    if (!kbDrag) return;
+    let newX = e.clientX - kbDrag.offsetX;
+    let newY = e.clientY - kbDrag.offsetY;
+    newX = Math.max(0, Math.min(window.innerWidth - kbBlock.offsetWidth, newX));
+    newY = Math.max(0, Math.min(window.innerHeight - kbBlock.offsetHeight, newY));
+    kbBlock.style.left = newX + 'px';
+    kbBlock.style.top = newY + 'px';
+  });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!kbDrag) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    let newX = t.clientX - kbDrag.offsetX;
+    let newY = t.clientY - kbDrag.offsetY;
+    newX = Math.max(0, Math.min(window.innerWidth - kbBlock.offsetWidth, newX));
+    newY = Math.max(0, Math.min(window.innerHeight - kbBlock.offsetHeight, newY));
+    kbBlock.style.left = newX + 'px';
+    kbBlock.style.top = newY + 'px';
+  }, {passive:false});
+
+  window.addEventListener('mouseup', () => { kbDrag = null; });
+  window.addEventListener('touchend', () => { kbDrag = null; });
+
+  buildKeyboard();
+
+  // ===== СОХРАНЕНИЕ =====
+  const STORAGE_KEY = 'windows34_save';
+  const defaultSave = {
+    userFiles: [], installedApps: [], trashItems: [], sites: [],
+    userApps: [], downloadedApps: [], deletedIcons: [], iconPositions: {},
+    wpIndex: 0, createdAt: Date.now(), version: '2.2'
+  };
+
+  let save = loadSave();
+  function loadSave() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return { ...defaultSave, ...JSON.parse(raw) };
+    } catch(e) {}
+    return { ...defaultSave };
+  }
+  function writeSave() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(save)); } catch(e) {}
+  }
+
+  const userFiles = save.userFiles;
+  const installedApps = save.installedApps;
+  const trashItems = save.trashItems;
+  const sites = save.sites;
+  const userApps = save.userApps;
+  const downloadedApps = save.downloadedApps;
+  const deletedIcons = save.deletedIcons;
+  const iconPositions = save.iconPositions;
+  let wpIndex = save.wpIndex || 0;
+
+  function syncSave() {
+    save.userFiles = userFiles;
+    save.installedApps = installedApps;
+    save.trashItems = trashItems;
+    save.sites = sites;
+    save.userApps = userApps;
+    save.downloadedApps = downloadedApps;
+    save.deletedIcons = deletedIcons;
+    save.iconPositions = iconPositions;
+    save.wpIndex = wpIndex;
+    save.updatedAt = Date.now();
+    writeSave();
+  }
+
+  // ===== ЧТО НОВОГО =====
+  function createWhatsNewFile() {
+    const alreadyExists = userFiles.some(f => f.name === 'ЧТО_НОВОГО.txt');
+    if (alreadyExists) return;
+    const content = `╔══════════════════════════════════════════════════════╗
+║                                                      ║
+║   🎉 ЧТО НОВОГО В WINDOWS 34 — ВЕРСИЯ 2.2 🎉         ║
+║                                                      ║
+╚══════════════════════════════════════════════════════╝
+
+📅 Дата выпуска: 08.11.2026
+🔖 Версия: 2.2
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎮 PLAY (бывший Google Play)
+   • Переименован в "Play"
+   • Внутри: Ransom, Minecraft Lite, HTML-Игры, Змейка
+
+🐍 ЗМЕЙКА — РАБОЧАЯ
+   • Полноценная игра
+   • Управление стрелками / кнопками
+   • Счёт и рекорд
+   • Ускорение при наборе очков
+
+👾 RANSOM — РАБОЧИЙ
+   • Текстуры из assets/
+   • Ошибки Windows
+   • Сбор монеток (50 шт)
+   • Видео ransom.mp4 и thank_you.mp4
+   • ⛔ НЕЛЬЗЯ УДАЛИТЬ (защищён от удаления)
+
+🌍 СМЕНА ЯЗЫКА
+   • Кнопка на панели задач (🇷🇺 RU / 🇺🇸 EN)
+
+💾 СОХРАНЕНИЕ
+   • Всё в localStorage
+   • Автосохранение каждые 30 секунд
+
+🖱️ УПРАВЛЕНИЕ МЫШЬЮ
+   • ЛКМ: выделить → удалить в корзину
+   • ПКМ: 2 клика = открыть, зажать = перетащить
+   • СКМ: прокрутка
+
+🌐 СОЗДАНИЕ САЙТОВ
+   • ✨ Создать → тип 3
+   • Только для вас
+
+💿 ДИСКИ
+   • C:, D:, E:, F: открываются
+
+🎮 СОЗДАНИЕ ПРОГРАММ
+   • ✨ Создать → тип 2
+
+⌨️ КЛАВИАТУРА
+   • Компактная, перемещаемая
+   • RU/EN раскладка
+
+📌 ПАНЕЛЬ ЗАДАЧ
+   • Проводник, Google XP, Google ПК, Терминал, Firefox
+   • Смена языка справа
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+© 2026`;
+    userFiles.push({
+      id: 'file_whats_new_' + Date.now(),
+      name: 'ЧТО_НОВОГО.txt',
+      content: content,
+      type: 'code',
+      lang: 'txt',
+      isSystem: true
+    });
+    syncSave();
+  }
+
+  // ===== ПРИЛОЖЕНИЯ =====
+  function getApps() {
+    const a = tObj('apps');
+    return [
+      { id:'computer',  name: a.computer,  ico: 'assets/иконка_компьютер.png', fallback:'🖥️' },
+      { id:'explorer',  name: a.explorer,  ico: 'assets/иконка_проводник.png',  fallback:'📁' },
+      { id:'disk',      name: a.disk,      ico: 'assets/иконка_диск.png',       fallback:'💾' },
+      { id:'notepad',   name: a.notepad,   ico: 'assets/иконка_блокнот.png',    fallback:'📝' },
+      { id:'calc',      name: a.calc,      ico: 'assets/иконка_калькулятор.png', fallback:'🧮' },
+      { id:'browser',   name: a.browser,   ico: 'assets/иконка_google.png',     fallback:'🌐' },
+      { id:'google_pc', name: a.google_pc, ico: 'assets/иконка_браузер.png',    fallback:'🖥️' },
+      { id:'terminal',  name: a.terminal,  ico: 'assets/иконка_терминал.png',   fallback:'💻' },
+      { id:'firefox',   name: a.firefox,   ico: 'assets/иконка_firefox.png',    fallback:'🦊' },
+      { id:'gamedev',   name: a.gamedev,   ico: 'assets/иконка_код.png',        fallback:'🎮' },
+      { id:'play',      name: a.play,      ico: 'assets/иконка_play.png',       fallback:'▶️' },
+      { id:'wallpaper', name: a.wallpaper, ico: 'assets/иконка_настройки.png',  fallback:'🖼️' },
+      { id:'trash',     name: a.trash,     ico: 'assets/иконка_корзина.png',    fallback:'🗑️' }
+    ];
+  }
+  let apps = getApps();
+
+  function renderDesktop() {
+    apps = getApps();
+    desktop.innerHTML = '';
+    drawGrid();
+
+    const allApps = [...apps, ...userApps, ...downloadedApps].filter(app => !deletedIcons.includes(app.id));
+    const occupied = new Set();
+
+    allApps.forEach((app) => {
+      let pos;
+      if (iconPositions[app.id] && iconPositions[app.id].col !== undefined) {
+        pos = { col: iconPositions[app.id].col, row: iconPositions[app.id].row };
+      } else {
+        let found = false;
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const key = c + ',' + r;
+            if (!occupied.has(key)) { pos = { col: c, row: r }; occupied.add(key); found = true; break; }
+          }
+          if (found) break;
+        }
+        if (!pos) pos = { col: 0, row: 0 };
+      }
+      occupied.add(pos.col + ',' + pos.row);
+      iconPositions[app.id] = pos;
+
+      const el = document.createElement('div');
+      el.className = 'icon';
+      el.dataset.appId = app.id;
+      el.style.left = (GRID_X + pos.col * CELL_W) + 'px';
+      el.style.top  = (GRID_Y + pos.row * CELL_H) + 'px';
+      let icoUrl = app.ico;
+      let fallback = app.fallback;
+      if (app.id === 'trash') {
+        icoUrl = trashItems.length > 0 ? 'assets/иконка_полная_корзина.png' : 'assets/иконка_корзина.png';
+      }
+      el.innerHTML = makeIconHTML(icoUrl, fallback) + `<div class="lbl">${app.name}</div>`;
+      el._app = app;
+      desktop.appendChild(el);
+    });
+
+    userFiles.forEach((file) => {
+      let pos = iconPositions[file.id];
+      if (!pos) {
+        let found = false;
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const key = c + ',' + r;
+            if (!occupied.has(key)) { pos = { col: c, row: r }; occupied.add(key); found = true; break; }
+          }
+          if (found) break;
+        }
+        if (!pos) pos = { col: 0, row: 0 };
+        iconPositions[file.id] = pos;
+      }
+      occupied.add(pos.col + ',' + pos.row);
+      const el = document.createElement('div');
+      el.className = 'icon';
+      el.dataset.fileId = file.id;
+      el.style.left = (GRID_X + pos.col * CELL_W) + 'px';
+      el.style.top  = (GRID_Y + pos.row * CELL_H) + 'px';
+      const ext = file.name.split('.').pop().toLowerCase();
+      const icons = { 'js':'📜', 'cpp':'⚙️', 'c':'🔧', 'rs':'🦀', 'txt':'📄', 'py':'🐍', 'png':'🖼️', 'jpg':'🖼️', 'jpeg':'🖼️', 'mp4':'🎬', 'html':'🌐' };
+      el.innerHTML = `<div class="ico">${icons[ext] || '📄'}</div><div class="lbl">${file.name}</div>`;
+      el._file = file;
+      desktop.appendChild(el);
+    });
+
+    sites.forEach((site) => {
+      let pos = iconPositions[site.id];
+      if (!pos) {
+        let found = false;
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const key = c + ',' + r;
+            if (!occupied.has(key)) { pos = { col: c, row: r }; occupied.add(key); found = true; break; }
+          }
+          if (found) break;
+        }
+        if (!pos) pos = { col: 0, row: 0 };
+        iconPositions[site.id] = pos;
+      }
+      occupied.add(pos.col + ',' + pos.row);
+      const el = document.createElement('div');
+      el.className = 'icon';
+      el.dataset.siteId = site.id;
+      el.style.left = (GRID_X + pos.col * CELL_W) + 'px';
+      el.style.top  = (GRID_Y + pos.row * CELL_H) + 'px';
+      el.innerHTML = `<div class="ico">🌐</div><div class="lbl">${site.name}</div>`;
+      el._site = site;
+      desktop.appendChild(el);
+    });
+
+    installedApps.forEach((app) => {
+      let pos = iconPositions[app.id];
+      if (!pos) {
+        let found = false;
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const key = c + ',' + r;
+            if (!occupied.has(key)) { pos = { col: c, row: r }; occupied.add(key); found = true; break; }
+          }
+          if (found) break;
+        }
+        if (!pos) pos = { col: 0, row: 0 };
+        iconPositions[app.id] = pos;
+      }
+      occupied.add(pos.col + ',' + pos.row);
+      const el = document.createElement('div');
+      el.className = 'icon';
+      el.dataset.installedId = app.id;
+      el.style.left = (GRID_X + pos.col * CELL_W) + 'px';
+      el.style.top  = (GRID_Y + pos.row * CELL_H) + 'px';
+      el.innerHTML = `<div class="ico">${app.emoji || '📦'}</div><div class="lbl">${app.name}</div>`;
+      el._installed = app;
+      desktop.appendChild(el);
+    });
+
+    updateCursor();
+    syncSave();
+  }
+
+  function deleteIconToTrash(app) {
+    if (app.id === 'ransom') { alert('⛔ ' + t('system.ransomDenied')); return; }
+    if (!confirm(`${t('system.confirmDelete')} «${app.name}» ${t('system.toTrash')}`)) return;
+    if (apps.some(a => a.id === app.id)) {
+      deletedIcons.push(app.id);
+      trashItems.push({ id: app.id, name: app.name, icon: app.ico, fallback: app.fallback, type: 'builtin' });
+      renderDesktop(); renderTrash();
+      return;
+    }
+    const idx = downloadedApps.findIndex(a => a.id === app.id);
+    if (idx !== -1) {
+      const removed = downloadedApps.splice(idx, 1)[0];
+      trashItems.push({ ...removed, type: 'downloaded' });
+    } else {
+      const idx2 = userApps.findIndex(a => a.id === app.id);
+      if (idx2 !== -1) {
+        const removed = userApps.splice(idx2, 1)[0];
+        trashItems.push({ ...removed, type: 'userapp' });
+      }
+    }
+    renderDesktop(); renderTrash();
+  }
+
+  function deleteFile(file) {
+    if (!confirm(`${t('system.confirmDelete')} «${file.name}» ${t('system.toTrash')}`)) return;
+    const idx = userFiles.findIndex(f => f.id === file.id);
+    if (idx !== -1) {
+      const removed = userFiles.splice(idx, 1)[0];
+      trashItems.push({ ...removed, type: 'file' });
+    }
+    renderDesktop(); renderTrash();
+  }
+
+  function deleteSite(site) {
+    if (!confirm(`${t('system.confirmDelete')} «${site.name}» ${t('system.toTrash')}`)) return;
+    const idx = sites.findIndex(s => s.id === site.id);
+    if (idx !== -1) {
+      const removed = sites.splice(idx, 1)[0];
+      trashItems.push({ ...removed, type: 'site' });
+    }
+    renderDesktop(); renderTrash();
+  }
+
+  function deleteInstalledApp(app) {
+    if (app.id === 'ransom') { alert('⛔ ' + t('system.ransomDenied')); return; }
+    if (!confirm(`${t('system.confirmDelete')} «${app.name}» ${t('system.toTrash')}`)) return;
+    const idx = installedApps.findIndex(a => a.id === app.id);
+    if (idx !== -1) {
+      const removed = installedApps.splice(idx, 1)[0];
+      trashItems.push({ ...removed, type: 'installed' });
+    }
+    renderDesktop(); renderTrash();
+  }
+
+  function renderTrash() {
+    const trashIcon = desktop.querySelector('[data-app-id="trash"]');
+    if (trashIcon) {
+      const icoUrl = trashItems.length > 0 ? 'assets/иконка_полная_корзина.png' : 'assets/иконка_корзина.png';
+      trashIcon.querySelector('.ico').innerHTML = `<img src="${icoUrl}" onerror="this.parentNode.innerHTML='🗑️'" alt="">`;
+    }
+    const trashWin = document.querySelector('.window[data-app="trash"]');
+    if (trashWin) {
+      const body = trashWin.querySelector('.win-body');
+      buildTrash(body, trashWin);
+    }
+    syncSave();
+  }
+
+  function makeIconHTML(iconUrl, fallbackEmoji) {
+    if (!iconUrl) return `<div class="ico">${fallbackEmoji}</div>`;
+    return `<div class="ico"><img src="${iconUrl}" onerror="this.parentNode.innerHTML='${fallbackEmoji}'" alt=""></div>`;
+  }
+
+  function launchInstalledApp(app) {
+    if (app.type === 'html' && app.content) {
+      const win = createWindow(app.name, '🌐');
+      const body = win.querySelector('.win-body');
+      body.style.padding = '0';
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'width:100%;height:100%;border:none;background:#fff;';
+      iframe.sandbox = 'allow-scripts allow-same-origin allow-modals allow-forms allow-popups';
+      iframe.srcdoc = app.content;
+      body.appendChild(iframe);
+      return;
+    }
+    if (app.type === 'binary') { alert(`✅ «${app.name}»`); return; }
+    openApp(app);
+  }
+
+  // ===== ОКНА =====
+  let windowZ = 100;
+  function createWindow(title, icon) {
+    const win = document.createElement('div');
+    win.className = 'window';
+    win.style.zIndex = ++windowZ;
+    win.style.left = (40 + Math.random()*80) + 'px';
+    win.style.top  = (30 + Math.random()*50) + 'px';
+    win.style.width = '400px';
+    win.style.height = '300px';
+    win.innerHTML = `
+      <div class="win-title">
+        <div class="wt-icon">${icon} <span>${title}</span></div>
+        <div class="win-controls">
+          <button class="win-btn min">_</button>
+          <button class="win-btn max">□</button>
+          <button class="win-btn close">✕</button>
+        </div>
+      </div>
+      <div class="win-body"></div>`;
+    const closeBtn = win.querySelector('.win-btn.close');
+    const maxBtn = win.querySelector('.win-btn.max');
+    const minBtn = win.querySelector('.win-btn.min');
+    closeBtn.onclick = (e) => { e.stopPropagation(); win.remove(); };
+    maxBtn.onclick = (e) => { e.stopPropagation(); win.classList.toggle('maximized'); };
+    minBtn.onclick = (e) => { e.stopPropagation(); win.style.display = 'none'; };
+
+    const title_bar = win.querySelector('.win-title');
+    let sx, sy, ox, oy, dragging = false;
+    title_bar.addEventListener('mousedown', e => {
+      if (e.target.closest('button')) return;
+      dragging = true; sx = e.clientX; sy = e.clientY;
+      ox = win.offsetLeft; oy = win.offsetTop;
+      win.style.zIndex = ++windowZ;
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      win.style.left = (ox + e.clientX - sx) + 'px';
+      win.style.top  = (oy + e.clientY - sy) + 'px';
+    });
+    window.addEventListener('mouseup', () => dragging = false);
+
+    screen.appendChild(win);
+    activeWindow = win;
+    return win;
+  }
+
+  function openApp(app) {
+    const existing = document.querySelector(`.window[data-app="${app.id}"]`);
+    if (existing) { existing.style.zIndex = ++windowZ; existing.style.display = 'flex'; activeWindow = existing; return; }
+    const win = createWindow(app.name, app.fallback || '📦');
+    win.dataset.app = app.id;
+    const body = win.querySelector('.win-body');
+    buildContent(app, body, win);
+    addToTaskbar(win, app.name, app.fallback || '📦', app.ico);
+    const observer = new MutationObserver(() => {
+      if (!document.body.contains(win)) {
+        const tbItem = taskbarWindows.querySelector(`[data-win-id="${win.dataset.winId}"]`);
+        if (tbItem) tbItem.remove();
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  let winCounter = 0;
+  function addToTaskbar(win, name, fallback, ico) {
+    win.dataset.winId = 'w' + (++winCounter);
+    const item = document.createElement('div');
+    item.className = 'taskbar-item active';
+    item.dataset.winId = win.dataset.winId;
+    item.innerHTML = ico ? `<img src="${ico}" onerror="this.remove()">` : `<span>${fallback}</span>`;
+    item.appendChild(document.createTextNode(' ' + name));
+    item.onclick = () => {
+      if (win.style.display === 'none') { win.style.display = 'flex'; win.style.zIndex = ++windowZ; }
+      else if (win.style.zIndex == windowZ) { win.style.display = 'none'; }
+      else { win.style.zIndex = ++windowZ; }
+      taskbarWindows.querySelectorAll('.taskbar-item').forEach(i => i.classList.remove('active'));
+      if (win.style.display !== 'none') item.classList.add('active');
+    };
+    taskbarWindows.appendChild(item);
+  }
+
+  function openFile(file) {
+    const existing = document.querySelector(`.window[data-file="${file.id}"]`);
+    if (existing) { existing.style.zIndex = ++windowZ; existing.style.display = 'flex'; return; }
+    const win = createWindow(file.name, '📄');
+    win.dataset.file = file.id;
+    const body = win.querySelector('.win-body');
+    body.style.padding = '0';
+    body.style.display = 'flex';
+    body.style.flexDirection = 'column';
+
+    if (file.name.endsWith('.html') && file.content) {
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'width:100%;height:100%;border:none;background:#fff;';
+      iframe.sandbox = 'allow-scripts allow-same-origin allow-modals allow-forms allow-popups';
+      iframe.srcdoc = file.content;
+      body.appendChild(iframe);
+    } else if (file.url && file.type === 'image') {
+      body.innerHTML = `<div style="text-align:center;padding:10px;overflow:auto"><img src="${file.url}" style="max-width:100%;max-height:100%"></div>`;
+    } else if (file.url && file.type === 'video') {
+      body.innerHTML = `<div style="text-align:center;padding:10px"><video src="${file.url}" controls style="max-width:100%;max-height:100%"></video></div>`;
+    } else {
+      body.innerHTML = `<textarea class="notepad" id="edit_${file.id}" spellcheck="false">${file.content || ''}</textarea>`;
+      body.style.flex = '1';
+      body.style.display = 'flex';
+      const ta = body.querySelector('#edit_' + file.id);
+      ta.style.flex = '1';
+      ta.dataset.focused = '1';
+      ta.addEventListener('input', () => {
+        file.content = ta.value;
+        syncSave();
+      });
+    }
+    addToTaskbar(win, file.name, '📄');
+  }
+
+  function buildContent(app, body, win) {
+    switch (app.id) {
+      case 'notepad': buildNotepad(body, win); break;
+      case 'calc': buildCalc(body, win); break;
+      case 'computer': buildComputer(body, win); break;
+      case 'explorer': buildExplorer(body, win); break;
+      case 'disk': buildComputer(body, win); break;
+      case 'wallpaper': buildWallpaper(body, win); break;
+      case 'browser': buildGoogleXP(body, win); break;
+      case 'google_pc': buildGooglePCXP(body, win); break;
+      case 'firefox': buildFirefox(body, win); break;
+      case 'terminal': buildTerminal(body, win); break;
+      case 'gamedev': buildGameDev(body, win); break;
+      case 'play': buildPlay(body, win); break;
+      case 'trash': buildTrash(body, win); break;
+      case 'ransom_game': startRansom(); break;
+      case 'snake_game': buildSnake(body, win); break;
+      default:
+        if (app.custom) {
+          body.innerHTML = `<div style="text-align:center;padding:20px;background:#fff"><div style="font-size:48px">${app.emoji || '📦'}</div><p>${app.name}</p></div>`;
+        }
+    }
+  }
+
+  function buildNotepad(body, win) {
+    body.style.padding = '0';
+    body.style.display = 'flex';
+    body.style.flexDirection = 'column';
+    body.innerHTML = `<textarea class="notepad" placeholder="${currentLang === 'ru' ? 'Пиши здесь...' : 'Type here...'}" autocomplete="off"></textarea>`;
+    const ta = body.querySelector('textarea');
+    ta.style.flex = '1';
+    ta.dataset.focused = '1';
+  }
+
+  function buildCalc(body, win) {
+    body.style.padding = '0';
+    body.innerHTML = `
+      <div class="calc-xp">
+        <div class="calc-display">0</div>
+        <div class="calc-grid">
+          <button>7</button><button>8</button><button>9</button><button class="op">/</button>
+          <button>4</button><button>5</button><button>6</button><button class="op">*</button>
+          <button>1</button><button>2</button><button>3</button><button class="op">-</button>
+          <button>0</button><button>C</button><button class="eq">=</button><button class="op">+</button>
+        </div>
+      </div>`;
+    const disp = body.querySelector('.calc-display');
+    let expr = '';
+    body.querySelectorAll('.calc-grid button').forEach(btn => {
+      btn.onclick = () => {
+        const v = btn.textContent;
+        if (v === 'C') { expr = ''; disp.textContent = '0'; return; }
+        if (v === '=') {
+          try {
+            const r = Function('"use strict";return(' + expr + ')')();
+            disp.textContent = r; expr = String(r);
+          } catch { disp.textContent = currentLang === 'ru' ? 'Ошибка' : 'Error'; expr = ''; }
+          return;
+        }
+        expr += v; disp.textContent = expr;
+      };
+    });
+  }
+
+  function buildComputer(body, win) {
+    body.style.padding = '0';
+    const e = tObj('explorer');
+    body.innerHTML = `
+      <div class="xp-toolbar">
+        <button id="compBack_${win.dataset.winId}">◀ ${currentLang === 'ru' ? 'Назад' : 'Back'}</button>
+        <button id="compRefresh_${win.dataset.winId}">↻ ${currentLang === 'ru' ? 'Обновить' : 'Refresh'}</button>
+      </div>
+      <div class="xp-explorer">
+        <div class="xp-explorer-left">
+          <div class="xp-section">
+            <h4>${currentLang === 'ru' ? 'Системные задачи' : 'System Tasks'}</h4>
+            <ul>
+              <li>👁 ${currentLang === 'ru' ? 'Просмотр сведений' : 'View info'}</li>
+              <li>➕ ${currentLang === 'ru' ? 'Добавить или удалить программы' : 'Add/Remove Programs'}</li>
+              <li>⚙ ${currentLang === 'ru' ? 'Изменить параметры' : 'Change settings'}</li>
+            </ul>
+          </div>
+        </div>
+        <div class="xp-explorer-main" id="compMain_${win.dataset.winId}"></div>
+      </div>
+      <div class="xp-status" id="compStatus_${win.dataset.winId}">${e.myComputer}</div>`;
+
+    const main = body.querySelector('#compMain_' + win.dataset.winId);
+    const status = body.querySelector('#compStatus_' + win.dataset.winId);
+
+    function showDisks() {
+      status.textContent = e.myComputer;
+      main.innerHTML = '';
+      const disks = [
+        { id:'C:', name:e.localDisk, icon:'assets/иконка_диск.png', fallback:'💾' },
+        { id:'D:', name:e.diskD, icon:'assets/иконка_диск.png', fallback:'💿' },
+        { id:'E:', name:e.diskE, icon:'assets/иконка_диск.png', fallback:'💿' },
+        { id:'F:', name:e.dvd, icon:null, fallback:'📀' }
+      ];
+      disks.forEach(d => {
+        const div = document.createElement('div');
+        div.className = 'xp-file';
+        div.innerHTML = `<div class="xf-ico">${d.icon ? `<img src="${d.icon}" onerror="this.parentNode.innerHTML='${d.fallback}'">` : d.fallback}</div><div>${d.name}</div>`;
+        div.onclick = () => openDisk(d.id);
+        main.appendChild(div);
+      });
+    }
+
+    function openDisk(id) {
+      status.textContent = (currentLang === 'ru' ? 'Диск ' : 'Disk ') + id;
+      main.innerHTML = '';
+      const items = [
+        { name:'Documents and Settings', icon:'📁', isFolder:true },
+        { name:'Program Files', icon:'📁', isFolder:true },
+        { name:'WINDOWS', icon:'📁', isFolder:true },
+        { name:'autoexec.bat', icon:'📄', isFolder:false },
+        { name:'boot.ini', icon:'📄', isFolder:false }
+      ];
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'xp-file';
+        div.innerHTML = `<div class="xf-ico">${item.icon}</div><div>${item.name}</div>`;
+        div.onclick = () => {
+          if (item.isFolder) alert((currentLang === 'ru' ? 'Открыть папку: ' : 'Open folder: ') + item.name);
+          else alert((currentLang === 'ru' ? 'Открыть файл: ' : 'Open file: ') + item.name);
+        };
+        main.appendChild(div);
+      });
+      userFiles.forEach(f => {
+        const div = document.createElement('div');
+        div.className = 'xp-file';
+        div.innerHTML = `<div class="xf-ico">📄</div><div>${f.name}</div>`;
+        div.onclick = () => openFile(f);
+        main.appendChild(div);
+      });
+      sites.forEach(site => {
+        const div = document.createElement('div');
+        div.className = 'xp-file';
+        div.innerHTML = `<div class="xf-ico">🌐</div><div>${site.name}</div>`;
+        div.onclick = () => openSite(site);
+        main.appendChild(div);
+      });
+    }
+
+    body.querySelector('#compBack_' + win.dataset.winId).onclick = (e) => { e.stopPropagation(); showDisks(); };
+    body.querySelector('#compRefresh_' + win.dataset.winId).onclick = (e) => { e.stopPropagation(); showDisks(); };
+    showDisks();
+  }
+
+  function buildExplorer(body, win) {
+    body.style.padding = '0';
+    const e = tObj('explorer');
+    body.innerHTML = `
+      <div class="xp-toolbar">
+        <button id="expNewFile_${win.dataset.winId}">📄 ${e.newFile}</button>
+        <button id="expNewSite_${win.dataset.winId}">🌐 ${e.newSite}</button>
+        <button id="expNewFolder_${win.dataset.winId}">📁 ${e.newFolder}</button>
+      </div>
+      <div class="xp-explorer">
+        <div class="xp-explorer-left">
+          <div class="xp-section">
+            <h4>${e.otherPlaces}</h4>
+            <ul>
+              <li data-path="desktop">🖥️ ${e.desktop}</li>
+              <li data-path="docs">📄 ${e.docs}</li>
+              <li data-path="pics">🖼️ ${e.pics}</li>
+              <li data-path="music">🎵 ${e.music}</li>
+              <li data-path="downloads">📥 ${e.downloads}</li>
+            </ul>
+          </div>
+          <div class="xp-section">
+            <h4>${e.myComputer}</h4>
+            <ul>
+              <li data-path="C:">💾 ${e.localDisk}</li>
+              <li data-path="D:">💿 ${e.diskD}</li>
+              <li data-path="E:">💿 ${e.diskE}</li>
+              <li data-path="F:">💿 ${e.dvd}</li>
+            </ul>
+          </div>
+          <div class="xp-section">
+            <h4>${e.trash}</h4>
+            <ul>
+              <li data-path="trash">🗑️ ${e.trash}</li>
+            </ul>
+          </div>
+        </div>
+        <div class="xp-explorer-main" id="expMain_${win.dataset.winId}"></div>
+      </div>
+      <div class="xp-status" id="expStatus_${win.dataset.winId}">${e.ready}</div>`;
+
+    const main = body.querySelector('#expMain_' + win.dataset.winId);
+    const status = body.querySelector('#expStatus_' + win.dataset.winId);
+
+    function showFolder(path) {
+      status.textContent = path;
+      main.innerHTML = '';
+      if (path === 'C:' || path === 'D:' || path === 'E:' || path === 'F:') {
+        const folders = [
+          { name:'Documents and Settings', icon:'📁', isFolder:true },
+          { name:'Program Files', icon:'📁', isFolder:true },
+          { name:'WINDOWS', icon:'📁', isFolder:true },
+          { name:'autoexec.bat', icon:'📄', isFolder:false },
+          { name:'boot.ini', icon:'📄', isFolder:false }
+        ];
+        folders.forEach(f => {
+          const div = document.createElement('div');
+          div.className = 'xp-file';
+          div.innerHTML = `<div class="xf-ico">${f.icon}</div><div>${f.name}</div>`;
+          div.onclick = () => {
+            if (f.isFolder) showFolder(path + '\\' + f.name);
+            else alert((currentLang === 'ru' ? 'Открыть файл: ' : 'Open file: ') + path + '\\' + f.name);
+          };
+          main.appendChild(div);
+        });
+        userFiles.forEach(file => {
+          const div = document.createElement('div');
+          div.className = 'xp-file';
+          div.innerHTML = `<div class="xf-ico">📄</div><div>${file.name}</div>`;
+          div.onclick = () => openFile(file);
+          main.appendChild(div);
+        });
+        sites.forEach(site => {
+          const div = document.createElement('div');
+          div.className = 'xp-file';
+          div.innerHTML = `<div class="xf-ico">🌐</div><div>${site.name}</div>`;
+          div.onclick = () => openSite(site);
+          main.appendChild(div);
+        });
+      } else if (path === 'trash') {
+        if (trashItems.length === 0) {
+          main.innerHTML = `<div style="grid-column:1/-1;padding:20px;text-align:center;color:#888">${t('trash.empty')}</div>`;
+        } else {
+          trashItems.forEach((item) => {
+            const div = document.createElement('div');
+            div.className = 'xp-file';
+            div.innerHTML = `<div class="xf-ico">🗑️</div><div>${item.name}</div>`;
+            div.onclick = () => alert(t('trash.confirmRestore') + ': ' + item.name);
+            main.appendChild(div);
+          });
+        }
+      } else {
+        userFiles.forEach(f => {
+          const div = document.createElement('div');
+          div.className = 'xp-file';
+          div.innerHTML = `<div class="xf-ico">📄</div><div>${f.name}</div>`;
+          div.onclick = () => openFile(f);
+          main.appendChild(div);
+        });
+        sites.forEach(site => {
+          const div = document.createElement('div');
+          div.className = 'xp-file';
+          div.innerHTML = `<div class="xf-ico">🌐</div><div>${site.name}</div>`;
+          div.onclick = () => openSite(site);
+          main.appendChild(div);
+        });
+        if (userFiles.length === 0 && sites.length === 0) {
+          main.innerHTML = `<div style="grid-column:1/-1;padding:20px;text-align:center;color:#888">${e.emptyFolder}</div>`;
+        }
+      }
+    }
+
+    body.querySelectorAll('.xp-section li[data-path]').forEach(li => {
+      li.onclick = () => showFolder(li.dataset.path);
+    });
+
+    body.querySelector('#expNewFile_' + win.dataset.winId).onclick = (e) => {
+      e.stopPropagation();
+      const name = prompt(t('dialog.fileName') + ':', 'new.txt');
+      if (!name) return;
+      userFiles.push({ id: 'file_' + Date.now(), name, content: '', type: 'code', lang: name.split('.').pop() });
+      syncSave();
+      renderDesktop(); showFolder('C:');
+    };
+
+    body.querySelector('#expNewSite_' + win.dataset.winId).onclick = (e) => {
+      e.stopPropagation();
+      createSiteDialog();
+    };
+
+    body.querySelector('#expNewFolder_' + win.dataset.winId).onclick = (e) => {
+      e.stopPropagation();
+      alert(currentLang === 'ru' ? 'Папка создана (виртуальная)' : 'Folder created (virtual)');
+    };
+
+    showFolder('desktop');
+  }
+
+  function createSiteDialog() {
+    const name = prompt(t('dialog.siteName') + ':', currentLang === 'ru' ? 'Мой сайт' : 'My site');
+    if (!name) return;
+
+    const win = createWindow((currentLang === 'ru' ? 'Создать сайт: ' : 'Create site: ') + name, '🌐');
+    win.style.width = '600px';
+    win.style.height = '450px';
+    const body = win.querySelector('.win-body');
+    body.style.padding = '0';
+    body.style.display = 'flex';
+    body.style.flexDirection = 'column';
+
+    body.innerHTML = `
+      <div class="game-tabs">
+        <div class="game-tab active" data-tab="html">HTML</div>
+        <div class="game-tab" data-tab="css">CSS</div>
+        <div class="game-tab" data-tab="js">JS</div>
+        <div class="game-tab" data-tab="preview">▶ ${currentLang === 'ru' ? 'Предпросмотр' : 'Preview'}</div>
+      </div>
+      <div class="game-panel active" data-panel="html">
+        <textarea class="game-editor" id="siteHtml" spellcheck="false" autocomplete="off"><h1>${currentLang === 'ru' ? 'Привет, мир!' : 'Hello, world!'}</h1>
+<p>${currentLang === 'ru' ? 'Это мой сайт.' : 'This is my site.'}</p>
+<a href="https://ru.wikipedia.org">${currentLang === 'ru' ? 'Википедия' : 'Wikipedia'}</a></textarea>
+      </div>
+      <div class="game-panel" data-panel="css">
+        <textarea class="game-editor" id="siteCss" spellcheck="false" autocomplete="off">body { background: #f0f0f0; font-family: Arial, sans-serif; padding: 20px; } h1 { color: #0054E3; }</textarea>
+      </div>
+      <div class="game-panel" data-panel="js">
+        <textarea class="game-editor" id="siteJs" spellcheck="false" autocomplete="off">console.log('${currentLang === 'ru' ? 'Сайт загружен!' : 'Site loaded!'}');</textarea>
+      </div>
+      <div class="game-panel" data-panel="preview">
+        <div class="preview-frame" id="sitePreview"></div>
+      </div>
+      <div class="game-toolbar">
+        <button class="xp-btn" id="siteSaveBtn">💾 ${currentLang === 'ru' ? 'Сохранить сайт' : 'Save site'}</button>
+        <button class="xp-btn" id="siteRunBtn">▶ ${currentLang === 'ru' ? 'Предпросмотр' : 'Preview'}</button>
+      </div>`;
+
+    body.querySelectorAll('.game-tab').forEach(tab => {
+      tab.onclick = (e) => {
+        e.stopPropagation();
+        body.querySelectorAll('.game-tab').forEach(t => t.classList.remove('active'));
+        body.querySelectorAll('.game-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        body.querySelector(`.game-panel[data-panel="${tab.dataset.tab}"]`).classList.add('active');
+      };
+    });
+
+    function getSiteContent() {
+      return `<!DOCTYPE html><html><head><style>${body.querySelector('#siteCss').value}</style></head><body>${body.querySelector('#siteHtml').value}<script>${body.querySelector('#siteJs').value}<\/script></body></html>`;
+    }
+
+    body.querySelector('#siteRunBtn').onclick = (e) => {
+      e.stopPropagation();
+      const preview = body.querySelector('#sitePreview');
+      preview.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.sandbox = 'allow-scripts allow-same-origin';
+      iframe.src = URL.createObjectURL(new Blob([getSiteContent()], { type: 'text/html' }));
+      preview.appendChild(iframe);
+      body.querySelectorAll('.game-tab').forEach(t => t.classList.remove('active'));
+      body.querySelectorAll('.game-panel').forEach(p => p.classList.remove('active'));
+      body.querySelector('.game-tab[data-tab="preview"]').classList.add('active');
+      body.querySelector('.game-panel[data-panel="preview"]').classList.add('active');
+    };
+
+    body.querySelector('#siteSaveBtn').onclick = (e) => {
+      e.stopPropagation();
+      const site = { id: 'site_' + Date.now(), name: name, content: getSiteContent() };
+      sites.push(site);
+      syncSave();
+      renderDesktop();
+      win.remove();
+      alert(t('system.siteCreated') + '\n' + name);
+      openSite(site);
+    };
+
+    setTimeout(() => {
+      const firstEditor = body.querySelector('#siteHtml');
+      if (firstEditor) { firstEditor.dataset.focused = '1'; firstEditor.focus(); }
+    }, 100);
+  }
+
+  function openSite(site) {
+    const win = createWindow('🌐 ' + site.name, '🌐');
+    win.style.width = '700px';
+    win.style.height = '500px';
+    const body = win.querySelector('.win-body');
+    body.style.padding = '0';
+    body.style.display = 'flex';
+    body.style.flexDirection = 'column';
+
+    body.innerHTML = `
+      <div class="pc-browser" style="height:100%">
+        <div class="pc-toolbar">
+          <button id="siteHome_${win.dataset.winId}">🏠</button>
+          <button id="siteReload_${win.dataset.winId}">↻</button>
+          <div class="pc-address"><span>🔒</span><input type="text" value="${site.name}" inputmode="none" autocomplete="off"></div>
+        </div>
+        <div class="pc-content" id="siteContent_${win.dataset.winId}"></div>
+      </div>`;
+
+    const content = body.querySelector('#siteContent_' + win.dataset.winId);
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'width:100%;height:100%;border:none;background:#fff;';
+    iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-modals';
+    iframe.src = URL.createObjectURL(new Blob([site.content], { type: 'text/html' }));
+    content.appendChild(iframe);
+
+    iframe.onload = () => {
+      try {
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        if (doc) {
+          doc.addEventListener('click', (ev) => {
+            const a = ev.target.closest('a');
+            if (a && a.href && !a.href.startsWith('javascript:') && !a.href.startsWith('blob:')) {
+              ev.preventDefault();
+              openUrlInWindow(a.href);
+            }
+          }, true);
+        }
+      } catch(err) {}
+    };
+
+    body.querySelector('#siteHome_' + win.dataset.winId).onclick = (e) => { e.stopPropagation(); win.remove(); };
+    body.querySelector('#siteReload_' + win.dataset.winId).onclick = (e) => {
+      e.stopPropagation();
+      const newIframe = document.createElement('iframe');
+      newIframe.style.cssText = 'width:100%;height:100%;border:none;background:#fff;';
+      newIframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-modals';
+      newIframe.src = URL.createObjectURL(new Blob([site.content], { type: 'text/html' }));
+      content.innerHTML = '';
+      content.appendChild(newIframe);
+    };
+  }
+
+  function openUrlInWindow(url) {
+    const site = sites.find(s => s.name.toLowerCase() === url.toLowerCase() || s.name.toLowerCase() === url.toLowerCase() + '.html');
+    if (site) { openSite(site); return; }
+
+    const win = createWindow('🌐 ' + (url.length > 40 ? url.slice(0, 40) + '...' : url), '🌐');
+    win.style.width = '700px';
+    win.style.height = '520px';
+    const body = win.querySelector('.win-body');
+    body.style.padding = '0';
+    body.style.display = 'flex';
+    body.style.flexDirection = 'column';
+
+    body.innerHTML = `
+      <div class="pc-browser" style="height:100%">
+        <div class="pc-toolbar">
+          <button id="urlBack_${win.dataset.winId}">◀</button>
+          <button id="urlReload_${win.dataset.winId}">↻</button>
+          <div class="pc-address"><span>🔒</span><input type="text" value="${url}" inputmode="none" autocomplete="off"></div>
+        </div>
+        <div class="pc-content" id="urlContent_${win.dataset.winId}"></div>
+      </div>`;
+
+    const content = body.querySelector('#urlContent_' + win.dataset.winId);
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'width:100%;height:100%;border:none;background:#fff;';
+    iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups';
+    iframe.src = url;
+    content.appendChild(iframe);
+
+    iframe.onload = () => {
+      try {
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        if (doc) {
+          doc.addEventListener('click', (ev) => {
+            const a = ev.target.closest('a');
+            if (a && a.href && !a.href.startsWith('javascript:') && !a.href.startsWith('blob:')) {
+              ev.preventDefault();
+              openUrlInWindow(a.href);
+            }
+          }, true);
+        }
+      } catch(err) {}
+    };
+
+    body.querySelector('#urlBack_' + win.dataset.winId).onclick = (e) => { e.stopPropagation(); win.remove(); };
+    body.querySelector('#urlReload_' + win.dataset.winId).onclick = (e) => { e.stopPropagation(); iframe.src = url; };
+  }
+
+  const wallpapers = [
+    'assets/обои1.png',
+    'linear-gradient(135deg,#0054E3,#0A246A)',
+    'linear-gradient(135deg,#4A6E00,#7FAF00)',
+    'linear-gradient(135deg,#6E0054,#9A0A7A)',
+    'linear-gradient(135deg,#7F2A00,#C04A00)'
+  ];
+
+  function setWallpaper(i) {
+    wpIndex = (i + wallpapers.length) % wallpapers.length;
+    screen.style.backgroundImage = wallpapers[wpIndex].startsWith('assets/')
+      ? `url(${wallpapers[wpIndex]})` : wallpapers[wpIndex];
+    screen.style.backgroundSize = 'cover';
+    save.wpIndex = wpIndex;
+    syncSave();
+  }
+
+  function buildWallpaper(body, win) {
+    body.innerHTML = `
+      <div style="font-weight:bold;margin-bottom:8px;color:#215DC6">${currentLang === 'ru' ? 'Свойства: Экран' : 'Properties: Display'}</div>
+      <div class="wallpaper-grid" id="wpGrid_${win.dataset.winId}" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid #808080">
+        <label style="display:block;font-weight:bold;margin-bottom:4px">📷 ${currentLang === 'ru' ? 'Загрузить свои обои' : 'Upload custom wallpaper'}:</label>
+        <input type="file" accept="image/*" id="wpFile_${win.dataset.winId}" style="font-size:11px">
+      </div>
+      <div style="text-align:right;margin-top:10px;padding-top:8px;border-top:1px solid #808080">
+        <button class="xp-btn" onclick="this.closest('.window').remove()">OK</button>
+      </div>`;
+
+    const grid = body.querySelector('#wpGrid_' + win.dataset.winId);
+    wallpapers.forEach((wp, i) => {
+      const d = document.createElement('div');
+      d.style.cssText = `aspect-ratio:16/10;border:2px solid ${i===wpIndex?'#0054E3':'#808080'};background-size:cover;background-position:center;cursor:pointer;${wp.startsWith('assets/') ? `background-image:url(${wp})` : `background:${wp}`}`;
+      d.onclick = () => { setWallpaper(i); grid.querySelectorAll('div').forEach(x => x.style.border = '2px solid #808080'); d.style.border = '2px solid #0054E3'; };
+      grid.appendChild(d);
+    });
+
+    body.querySelector('#wpFile_' + win.dataset.winId).onchange = (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const url = ev.target.result;
+        screen.style.backgroundImage = `url(${url})`;
+        screen.style.backgroundSize = 'cover';
+        save.customWallpaper = url;
+        syncSave();
+      };
+      reader.readAsDataURL(f);
+    };
+  }
+
+  function refreshWallpaperThumbs() {
+    const win = document.querySelector('.window[data-app="wallpaper"]');
+    if (!win) return;
+    const body = win.querySelector('.win-body');
+    buildWallpaper(body, win);
+  }
+
+  function buildTerminal(body, win) {
+    body.style.padding = '0';
+    const tm = tObj('terminal');
+    body.innerHTML = `
+      <div class="terminal" id="term_${win.dataset.winId}">
+        <div class="line info">Microsoft Windows XP [Version 5.1.2600]</div>
+        <div class="line info">${currentLang === 'ru' ? 'Windows 34 v2.2 — Ransom защищён' : 'Windows 34 v2.2 — Ransom protected'}</div>
+        <div class="line">&nbsp;</div>
+        <div class="line"><span class="prompt">C:\\Documents and Settings\\User&gt;</span> <input type="text" id="termInput_${win.dataset.winId}" inputmode="none" autocomplete="off"></div>
+      </div>`;
+
+    const term = body.querySelector('#term_' + win.dataset.winId);
+    const input = body.querySelector('#termInput_' + win.dataset.winId);
+    input.dataset.focused = '1';
+
+    const print = (text, cls) => {
+      const line = document.createElement('div');
+      line.className = 'line ' + (cls || '');
+      line.innerHTML = text;
+      const lastLine = term.querySelector('.line:last-child');
+      term.insertBefore(line, lastLine);
+      term.scrollTop = term.scrollHeight;
+    };
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const cmd = input.value.trim();
+      print(`<span class="prompt">C:\\&gt;</span> ${cmd}`);
+      input.value = '';
+      const parts = cmd.toLowerCase().split(' ');
+      const c = parts[0];
+      switch (c) {
+        case 'help': print(tm.help); break;
+        case 'dir':
+          print(' C:\\');
+          userFiles.forEach(f => print('       ' + f.name));
+          sites.forEach(s => print('  <SITE> ' + s.name));
+          break;
+        case 'sites':
+          if (sites.length === 0) print(tm.noSites, 'info');
+          else sites.forEach(s => print('  🌐 ' + s.name));
+          break;
+        case 'save': syncSave(); print('💾 ' + tm.saved, 'info'); break;
+        case 'clear':
+          if (confirm(t('dialog.confirmClearAll'))) {
+            localStorage.removeItem(STORAGE_KEY);
+            location.reload();
+          }
+          break;
+        case 'echo': print(parts.slice(1).join(' ')); break;
+        case 'cls': term.querySelectorAll('.line').forEach(l => l.remove()); break;
+        case 'ver': print(tm.version); break;
+        case 'date': print(new Date().toLocaleString(currentLang === 'ru' ? 'ru-RU' : 'en-US')); break;
+        case 'exit': win.remove(); return;
+        case '': break;
+        default: print(`'${c}' ${tm.notCommand}.`, 'error');
+      }
+    });
+  }
+
+  function buildGameDev(body, win) {
+    body.style.padding = '0';
+    body.innerHTML = `
+      <div class="game-tabs">
+        <div class="game-tab active" data-tab="code">💻 ${currentLang === 'ru' ? 'Код' : 'Code'}</div>
+        <div class="game-tab" data-tab="preview">▶ ${currentLang === 'ru' ? 'Запуск' : 'Run'}</div>
+      </div>
+      <div class="game-panel active" data-panel="code">
+        <div class="game-toolbar">
+          <button class="xp-btn" id="gdRun_${win.dataset.winId}">▶ ${currentLang === 'ru' ? 'Запустить' : 'Run'}</button>
+          <button class="xp-btn" id="gdSave_${win.dataset.winId}">💾 ${currentLang === 'ru' ? 'Сохранить' : 'Save'}</button>
+          <button class="xp-btn" id="gdExample_${win.dataset.winId}">📋 ${currentLang === 'ru' ? 'Пример' : 'Example'}</button>
+        </div>
+        <textarea class="game-editor" id="gdCode_${win.dataset.winId}" spellcheck="false" autocomplete="off"><html><body style="margin:0;background:#000;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh"><h1>🎮 ${currentLang === 'ru' ? 'Моя игра' : 'My game'}</h1></body></html></textarea>
+      </div>
+      <div class="game-panel" data-panel="preview">
+        <div class="preview-frame" id="gdPreview_${win.dataset.winId}"></div>
+      </div>`;
+
+    const codeArea = body.querySelector('#gdCode_' + win.dataset.winId);
+    codeArea.dataset.focused = '1';
+
+    body.querySelectorAll('.game-tab').forEach(tab => {
+      tab.onclick = (e) => {
+        e.stopPropagation();
+        body.querySelectorAll('.game-tab').forEach(t => t.classList.remove('active'));
+        body.querySelectorAll('.game-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        body.querySelector(`.game-panel[data-panel="${tab.dataset.tab}"]`).classList.add('active');
+        if (tab.dataset.tab === 'preview') {
+          const preview = body.querySelector('#gdPreview_' + win.dataset.winId);
+          preview.innerHTML = '';
+          const iframe = document.createElement('iframe');
+          iframe.sandbox = 'allow-scripts allow-same-origin allow-modals allow-forms';
+          iframe.srcdoc = codeArea.value;
+          preview.appendChild(iframe);
+        }
+      };
+    });
+
+    body.querySelector('#gdRun_' + win.dataset.winId).onclick = (e) => {
+      e.stopPropagation();
+      body.querySelectorAll('.game-tab').forEach(t => t.classList.remove('active'));
+      body.querySelectorAll('.game-panel').forEach(p => p.classList.remove('active'));
+      body.querySelector('.game-tab[data-tab="preview"]').classList.add('active');
+      body.querySelector('.game-panel[data-panel="preview"]').classList.add('active');
+      const preview = body.querySelector('#gdPreview_' + win.dataset.winId);
+      preview.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.sandbox = 'allow-scripts allow-same-origin allow-modals allow-forms';
+      iframe.srcdoc = codeArea.value;
+      preview.appendChild(iframe);
+    };
+
+    body.querySelector('#gdSave_' + win.dataset.winId).onclick = (e) => {
+      e.stopPropagation();
+      const name = prompt(t('dialog.fileName') + ':', 'my_game.html');
+      if (!name) return;
+      userFiles.push({ id: 'file_' + Date.now(), name, content: codeArea.value, type: 'code', lang: 'html' });
+      syncSave();
+      renderDesktop();
+      alert('✅ ' + t('system.gameSaved') + ': ' + name);
+    };
+
+    body.querySelector('#gdExample_' + win.dataset.winId).onclick = (e) => {
+      e.stopPropagation();
+      codeArea.value = `<html><head><style>body{margin:0;background:#1a1a2e;overflow:hidden}</style></head><body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c');c.width=innerWidth;c.height=innerHeight;
+const ctx=c.getContext('2d');let x=100,y=100,vx=3,vy=2;
+function loop(){ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,c.width,c.height);x+=vx;y+=vy;
+if(x<20||x>c.width-20)vx*=-1;if(y<20||y>c.height-20)vy*=-1;
+ctx.fillStyle='#4caf50';ctx.beginPath();ctx.arc(x,y,20,0,Math.PI*2);ctx.fill();
+requestAnimationFrame(loop);}loop();
+<\/script></body></html>`;
+    };
+  }
+
+  // ===== PLAY =====
+  function buildPlay(body, win) {
+    body.innerHTML = `
+      <div style="background:linear-gradient(180deg,#0058EE,#0048CC);padding:8px 12px;color:#fff;font-weight:bold;margin:-4px -4px 4px">Play</div>
+      <div style="display:flex;gap:4px;padding:4px 0;border-bottom:1px solid #808080">
+        <button class="xp-btn" data-tab="all">${currentLang === 'ru' ? 'Все' : 'All'}</button>
+        <button class="xp-btn" data-tab="games">${currentLang === 'ru' ? 'Игры' : 'Games'}</button>
+      </div>
+      <div class="play-grid" id="playGrid_${win.dataset.winId}" style="margin-top:8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px"></div>`;
+
+    const grid = body.querySelector('#playGrid_' + win.dataset.winId);
+    const playApps = [
+      { name:'Ransom', desc: currentLang === 'ru' ? 'Хоррор' : 'Horror', emoji:'👾', id:'ransom', type:'game', locked:true },
+      { name:'Minecraft Lite', desc: currentLang === 'ru' ? 'Песочница' : 'Sandbox', emoji:'⛏️', id:'minecraft_lite', type:'game' },
+      { name:'Snake', desc: currentLang === 'ru' ? 'Классика' : 'Classic', emoji:'🐍', id:'snake', type:'game' },
+      { name:'HTML', desc: currentLang === 'ru' ? 'Создай игру' : 'Create game', emoji:'🎮', id:'gamedev', type:'app' }
+    ];
+
+    function renderPlay(filter) {
+      grid.innerHTML = '';
+      playApps.filter(a => filter === 'all' || a.type === filter).forEach(app => {
+        const downloaded = downloadedApps.some(d => d.id === app.id);
+        const card = document.createElement('div');
+        card.style.cssText = 'padding:8px;border:1px solid #808080;text-align:center;background:#fff';
+        card.innerHTML = `
+          <div style="font-size:32px">${app.emoji}</div>
+          <div style="font-weight:bold;font-size:11px">${app.name}</div>
+          <div style="font-size:10px;color:#666">${app.desc}</div>
+          <button class="xp-btn" style="margin-top:4px">${downloaded ? '✓ ' + (currentLang === 'ru' ? 'Открыть' : 'Open') : '📥 ' + (currentLang === 'ru' ? 'Установить' : 'Install')}</button>`;
+        card.querySelector('button').onclick = (e) => {
+          e.stopPropagation();
+          if (downloaded) {
+            const ex = downloadedApps.find(d => d.id === app.id) || apps.find(a => a.id === app.id);
+            openApp(ex);
+          } else {
+            if (app.id === 'ransom') downloadRansom();
+            else if (app.id === 'minecraft_lite') {
+              installedApps.push({ id:'mc', name:'Minecraft Lite', emoji:'⛏️', type:'html', content: getMinecraftHTML(), ext:'html' });
+            } else if (app.id === 'snake') {
+              downloadedApps.push({ id:'snake_game', name:'Snake', emoji:'🐍', custom:true });
+            } else if (app.id === 'gamedev') {
+              openApp(apps.find(a => a.id === 'gamedev'));
+              return;
+            }
+            syncSave();
+            renderDesktop(); renderPlay(filter);
+          }
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    body.querySelectorAll('[data-tab]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        body.querySelectorAll('[data-tab]').forEach(b => b.style.background = '');
+        btn.style.background = '#D0D0D0';
+        renderPlay(btn.dataset.tab);
+      };
+    });
+
+    renderPlay('all');
+  }
+
+  // ===== ЗМЕЙКА =====
+  function buildSnake(body, win) {
+    body.style.padding = '0';
+    body.innerHTML = `
+      <div style="background:#1a1a2e;padding:10px;text-align:center;color:#fff">
+        <div style="font-size:14px;margin-bottom:8px">
+          🐍 <b>Snake</b> — ${currentLang === 'ru' ? 'Счёт' : 'Score'}: <span id="snakeScore_${win.dataset.winId}">0</span> · ${currentLang === 'ru' ? 'Рекорд' : 'Best'}: <span id="snakeBest_${win.dataset.winId}">0</span>
+        </div>
+        <canvas class="snake-canvas" id="snakeCanvas_${win.dataset.winId}" width="400" height="400"></canvas>
+        <div style="margin-top:10px;display:grid;grid-template-columns:repeat(3,50px);gap:4px;justify-content:center">
+          <div></div>
+          <button class="xp-btn snake-up" style="padding:8px">▲</button>
+          <div></div>
+          <button class="xp-btn snake-left" style="padding:8px">◀</button>
+          <button class="xp-btn snake-down" style="padding:8px">▼</button>
+          <button class="xp-btn snake-right" style="padding:8px">▶</button>
+        </div>
+        <div style="margin-top:10px">
+          <button class="xp-btn" id="snakeRestart_${win.dataset.winId}">🔄 ${currentLang === 'ru' ? 'Заново' : 'Restart'}</button>
+        </div>
+      </div>`;
+
+    const canvas = body.querySelector('#snakeCanvas_' + win.dataset.winId);
+    const ctx = canvas.getContext('2d');
+    const scoreEl = body.querySelector('#snakeScore_' + win.dataset.winId);
+    const bestEl = body.querySelector('#snakeBest_' + win.dataset.winId);
+
+    const gridSize = 20;
+    const cellSize = canvas.width / gridSize;
+    let snake = [{x:10, y:10}];
+    let direction = {x:1, y:0};
+    let nextDir = {x:1, y:0};
+    let food = {x:15, y:15};
+    let score = 0;
+    let gameOver = false;
+    let gameLoop = null;
+    let speed = 150;
+
+    let best = parseInt(localStorage.getItem('windows34_snake_best') || '0');
+    bestEl.textContent = best;
+
+    function spawnFood() {
+      do {
+        food = { x: Math.floor(Math.random()*gridSize), y: Math.floor(Math.random()*gridSize) };
+      } while (snake.some(s => s.x === food.x && s.y === food.y));
+    }
+
+    function draw() {
+      ctx.fillStyle = '#0a0a1a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Сетка
+      ctx.strokeStyle = '#1a1a2e';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= gridSize; i++) {
+        ctx.beginPath(); ctx.moveTo(i*cellSize, 0); ctx.lineTo(i*cellSize, canvas.height); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i*cellSize); ctx.lineTo(canvas.width, i*cellSize); ctx.stroke();
+      }
+      // Еда
+      ctx.fillStyle = '#ff4444';
+      ctx.fillRect(food.x*cellSize+2, food.y*cellSize+2, cellSize-4, cellSize-4);
+      // Змейка
+      snake.forEach((s, i) => {
+        ctx.fillStyle = i === 0 ? '#4caf50' : '#2e7d32';
+        ctx.fillRect(s.x*cellSize+1, s.y*cellSize+1, cellSize-2, cellSize-2);
+      });
+    }
+
+    function tick() {
+      if (gameOver) return;
+      direction = nextDir;
+      const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+      if (head.x < 0 || head.x >= gridSize || head.y < 0 || head.y >= gridSize || snake.some(s => s.x === head.x && s.y === head.y)) {
+        gameOver = true;
+        if (score > best) {
+          best = score;
+          localStorage.setItem('windows34_snake_best', best);
+          bestEl.textContent = best;
+        }
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = '24px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2 - 20);
+        ctx.font = '14px monospace';
+        ctx.fillText((currentLang === 'ru' ? 'Счёт: ' : 'Score: ') + score, canvas.width/2, canvas.height/2 + 10);
+        ctx.fillText((currentLang === 'ru' ? 'Нажми Заново' : 'Press Restart'), canvas.width/2, canvas.height/2 + 40);
+        return;
+      }
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        scoreEl.textContent = score;
+        spawnFood();
+        if (speed > 60) {
+          speed -= 3;
+          clearInterval(gameLoop);
+          gameLoop = setInterval(tick, speed);
+        }
+      } else {
+        snake.pop();
+      }
+      draw();
+    }
+
+    function restart() {
+      snake = [{x:10, y:10}];
+      direction = {x:1, y:0};
+      nextDir = {x:1, y:0};
+      score = 0;
+      speed = 150;
+      scoreEl.textContent = '0';
+      gameOver = false;
+      spawnFood();
+      if (gameLoop) clearInterval(gameLoop);
+      gameLoop = setInterval(tick, speed);
+      draw();
+    }
+
+    // Кнопки
+    const upBtn = body.querySelector('.snake-up');
+    const downBtn = body.querySelector('.snake-down');
+    const leftBtn = body.querySelector('.snake-left');
+    const rightBtn = body.querySelector('.snake-right');
+    upBtn.onclick = (e) => { e.stopPropagation(); if (direction.y === 0) nextDir = {x:0, y:-1}; };
+    downBtn.onclick = (e) => { e.stopPropagation(); if (direction.y === 0) nextDir = {x:0, y:1}; };
+    leftBtn.onclick = (e) => { e.stopPropagation(); if (direction.x === 0) nextDir = {x:-1, y:0}; };
+    rightBtn.onclick = (e) => { e.stopPropagation(); if (direction.x === 0) nextDir = {x:1, y:0}; };
+
+    body.querySelector('#snakeRestart_' + win.dataset.winId).onclick = (e) => { e.stopPropagation(); restart(); };
+
+    // Клавиатура
+    const keyHandler = (e) => {
+      if (!document.body.contains(canvas)) {
+        window.removeEventListener('keydown', keyHandler);
+        if (gameLoop) clearInterval(gameLoop);
+        return;
+      }
+      if (e.key === 'ArrowUp' && direction.y === 0) { nextDir = {x:0, y:-1}; e.preventDefault(); }
+      else if (e.key === 'ArrowDown' && direction.y === 0) { nextDir = {x:0, y:1}; e.preventDefault(); }
+      else if (e.key === 'ArrowLeft' && direction.x === 0) { nextDir = {x:-1, y:0}; e.preventDefault(); }
+      else if (e.key === 'ArrowRight' && direction.x === 0) { nextDir = {x:1, y:0}; e.preventDefault(); }
+    };
+    window.addEventListener('keydown', keyHandler);
+
+    restart();
+  }
+
+  // ===== RANSOM =====
+  let ransomActive = false;
+  function startRansom() {
+    if (ransomActive) return;
+    ransomActive = true;
+
+    const ASSET_PATH = 'assets/';
+    const ransomAssets = {
+      icon: ASSET_PATH + 'ransom.png',
+      video: ASSET_PATH + 'ransom.mp4',
+      coin: ASSET_PATH + 'coin.png',
+      thank: ASSET_PATH + 'thank_you.mp4'
+    };
+
+    let coinsCollected = 0;
+    let coinElements = [];
+    const COINS_NEEDED = 50;
+    const RANSOM_TIME_MS = 60000;
+    let ransomTimer = null;
+    let coinSpawnInterval = null;
+    let videoLayer = null;
+
+    function showFakeErrors(count, done) {
+      let shown = 0;
+      function next() {
+        if (shown >= count) { done(); return; }
+        shown++;
+        const err = document.createElement('div');
+        err.style.cssText = `position:absolute;width:320px;background:#ECE9D8;border:2px solid #0054E3;box-shadow:2px 2px 8px #0008;z-index:200000;left:${40 + Math.random()*Math.max(0, screen.clientWidth - 360)}px;top:${40 + Math.random()*Math.max(0, screen.clientHeight - 220)}px;font-family:Tahoma,sans-serif;`;
+        const messages = [
+          currentLang === 'ru' ? 'ransom.exe не может быть удалён. Система заражена.' : 'ransom.exe cannot be deleted. System infected.',
+          currentLang === 'ru' ? 'КРИТИЧЕСКАЯ ОШИБКА: все файлы зашифрованы!' : 'CRITICAL ERROR: all files encrypted!',
+          currentLang === 'ru' ? 'ОШИБКА 0xDEADBEEF: доступ запрещён' : 'ERROR 0xDEADBEEF: access denied',
+          currentLang === 'ru' ? 'Собери 50 монет чтобы спасти компьютер!' : 'Collect 50 coins to save your computer!'
+        ];
+        err.innerHTML = `<div style="background:linear-gradient(180deg,#0058EE,#0048CC);color:#fff;padding:3px 8px;font-weight:bold;font-size:11px">⛔ Windows</div>
+          <div style="padding:16px;font-size:12px;display:flex;gap:10px;align-items:center"><div style="font-size:32px">⚠️</div><div>${messages[shown-1]||messages[0]}</div></div>
+          <div style="padding:6px;text-align:center;border-top:1px solid #808080;background:#ECE9D8"><button style="padding:3px 24px;border:1px solid #003C74;background:#ECE9D8;font-family:Tahoma;cursor:pointer;box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #808080">OK</button></div>`;
+        err.querySelector('button').onclick = () => { err.remove(); next(); };
+        screen.appendChild(err);
+      }
+      next();
+    }
+
+    function openRansomVideo() {
+      if (videoLayer) return;
+      videoLayer = document.createElement('div');
+      videoLayer.className = 'ransom-video-layer';
+      const v = document.createElement('video');
+      v.src = ransomAssets.video;
+      v.autoplay = true; v.loop = true; v.muted = false; v.playsInline = true;
+      v.onerror = () => { console.warn('ransom.mp4 не загрузилось'); };
+      videoLayer.appendChild(v);
+      screen.appendChild(videoLayer);
+      v.play().catch(() => {});
+    }
+
+    function closeRansomVideo() {
+      if (videoLayer) { videoLayer.remove(); videoLayer = null; }
+    }
+
+    function spawnCoin() {
+      const c = document.createElement('div');
+      c.className = 'coin';
+      c.style.left = (Math.random() * (screen.clientWidth - 40)) + 'px';
+      c.style.top = (Math.random() * (screen.clientHeight - 100)) + 'px';
+      const img = new Image();
+      img.src = ransomAssets.coin;
+      img.onload = () => { c.innerHTML = ''; c.appendChild(img); };
+      img.onerror = () => { c.innerHTML = '<div class="fallback">🪙</div>'; };
+      c.onclick = (e) => {
+        e.stopPropagation();
+        c.remove();
+        coinElements = coinElements.filter(x => x !== c);
+        coinsCollected++;
+        coinCountEl.textContent = coinsCollected;
+        if (coinsCollected >= COINS_NEEDED) winRansom();
+      };
+      screen.appendChild(c);
+      coinElements.push(c);
+    }
+
+    function startCoinGame() {
+      coinCountEl.textContent = '0';
+      hud.classList.add('show');
+      for (let i = 0; i < 8; i++) spawnCoin();
+      let tot = 8;
+      coinSpawnInterval = setInterval(() => {
+        if (!ransomActive) { clearInterval(coinSpawnInterval); return; }
+        if (tot < COINS_NEEDED + 15) { spawnCoin(); tot++; }
+        else clearInterval(coinSpawnInterval);
+      }, 700);
+      ransomTimer = setTimeout(() => {
+        if (ransomActive && coinsCollected < COINS_NEEDED) failRansom();
+      }, RANSOM_TIME_MS);
+    }
+
+    function winRansom() {
+      if (!ransomActive) return;
+      ransomActive = false;
+      clearTimeout(ransomTimer);
+      clearInterval(coinSpawnInterval);
+      coinElements.forEach(c => c.remove());
+      coinElements = [];
+      hud.classList.remove('show');
+      closeRansomVideo();
+      // thank_you
+      const l = document.createElement('div');
+      l.className = 'thank-video-layer';
+      const v = document.createElement('video');
+      v.src = ransomAssets.thank;
+      v.autoplay = true; v.playsInline = true;
+      v.onerror = () => setTimeout(() => { l.remove(); alert('✅ ' + (currentLang === 'ru' ? 'Вирус уничтожен!' : 'Virus destroyed!')); }, 1500);
+      v.onended = () => { l.remove(); alert('✅ ' + (currentLang === 'ru' ? 'Вирус уничтожен!' : 'Virus destroyed!')); };
+      l.appendChild(v);
+      screen.appendChild(l);
+      v.play().catch(() => {});
+      setTimeout(() => { if (l.parentNode) { l.remove(); alert('✅ ' + (currentLang === 'ru' ? 'Вирус уничтожен!' : 'Virus destroyed!')); } }, 5000);
+      // Удаляем приложение ransom? НЕТ — оно защищено, но помечаем что игра пройдена
+      // Оставляем приложение (по ТЗ его нельзя удалить)
+      const ransomApp = downloadedApps.find(a => a.id === 'ransom');
+      if (ransomApp) ransomApp.completed = true;
+      syncSave();
+      renderDesktop();
+    }
+
+    function failRansom() {
+      if (!ransomActive) return;
+      ransomActive = false;
+      clearTimeout(ransomTimer);
+      clearInterval(coinSpawnInterval);
+      coinElements.forEach(c => c.remove());
+      coinElements = [];
+      hud.classList.remove('show');
+      closeRansomVideo();
+      audioShutdown.play().catch(() => {});
+      const off = document.createElement('div');
+      off.className = 'shutdown-screen';
+      off.innerHTML = `<div class="spinner"></div><div>${currentLang === 'ru' ? 'Завершение работы...' : 'Shutting down...'}</div>`;
+      screen.appendChild(off);
+      setTimeout(() => off.remove(), 10000);
+    }
+
+    showFakeErrors(4, () => {
+      openRansomVideo();
+      startCoinGame();
+    });
+  }
+
+  function downloadRansom() {
+    if (downloadedApps.some(a => a.id === 'ransom')) return;
+    downloadedApps.push({
+      id:'ransom',
+      name:'Ransom',
+      ico: 'assets/ransom.png',
+      fallback:'👾',
+      custom:true,
+      locked:true,
+      desc: currentLang === 'ru' ? 'Хоррор-игра' : 'Horror game'
+    });
+    syncSave();
+    renderDesktop();
+  }
+
+  // ===== БРАУЗЕРЫ =====
+  function buildGoogleXP(body, win) {
+    win.style.width = '700px';
+    win.style.height = '520px';
+    body.style.padding = '0';
+    body.style.display = 'flex';
+    body.style.flexDirection = 'column';
+    body.innerHTML = `
+      <div class="pc-browser" style="height:100%">
+        <div class="pc-toolbar">
+          <button id="pcBack">◀</button>
+          <button id="pcForward">▶</button>
+          <button id="pcReload">↻</button>
+          <button id="pcHome">🏠</button>
+          <div class="pc-address"><span>🔒</span><input type="text" id="pcUrl" value="google.com" inputmode="none" autocomplete="off"></div>
+          <button id="pcGo">→</button>
+        </div>
+        <div class="pc-content" id="pcContent"></div>
+      </div>`;
+    const content = body.querySelector('#pcContent');
+    const urlInput = body.querySelector('#pcUrl');
+
+    function showHome() {
+      content.innerHTML = `
+        <div class="pc-home">
+          <div class="pc-home-logo"><span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span></div>
+          <div class="pc-home-search">
+            <input type="text" id="pcHomeInput" placeholder="${currentLang === 'ru' ? 'Поиск в Google' : 'Search Google'}" inputmode="none" autocomplete="off">
+            <button id="pcHomeBtn">${currentLang === 'ru' ? 'Поиск в Google' : 'Google Search'}</button>
+          </div>
+          <div class="pc-home-links">
+            <a data-url="https://ru.wikipedia.org">${currentLang === 'ru' ? 'Википедия' : 'Wikipedia'}</a>
+            <a data-url="https://github.com">GitHub</a>
+            <a data-url="https://www.youtube.com">YouTube</a>
+          </div>
+        </div>`;
+      const inp = content.querySelector('#pcHomeInput');
+      inp.dataset.focused = '1';
+      const go = () => navigate(inp.value);
+      content.querySelector('#pcHomeBtn').onclick = (e) => { e.stopPropagation(); go(); };
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+      content.querySelectorAll('.pc-home-links a').forEach(a =>
+        a.onclick = (e) => { e.stopPropagation(); openUrlInWindow(a.dataset.url); });
+    }
+
+    function navigate(q) {
+      q = q.trim(); if (!q) return;
+      const site = sites.find(s => s.name.toLowerCase() === q.toLowerCase());
+      if (site) { openSite(site); win.remove(); return; }
+      let url;
+      if (/^(https?:\/\/)?([\w-]+\.)+[\w-]+/.test(q)) url = q.startsWith('http') ? q : 'https://' + q;
+      else url = `https://www.bing.com/search?q=${encodeURIComponent(q)}`;
+      urlInput.value = url;
+      content.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'width:100%;height:100%;border:none;background:#fff;';
+      iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups';
+      iframe.src = url;
+      content.appendChild(iframe);
+    }
+
+    body.querySelector('#pcGo').onclick = (e) => { e.stopPropagation(); navigate(urlInput.value); };
+    urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') navigate(urlInput.value); });
+    body.querySelector('#pcReload').onclick = (e) => { e.stopPropagation(); navigate(urlInput.value); };
+    body.querySelector('#pcHome').onclick = (e) => { e.stopPropagation(); showHome(); };
+    body.querySelector('#pcBack').onclick = (e) => { e.stopPropagation(); showHome(); };
+    body.querySelector('#pcForward').onclick = (e) => { e.stopPropagation(); showHome(); };
+    showHome();
+  }
+
+  function buildGooglePCXP(body, win) {
+    win.style.width = '780px';
+    win.style.height = '560px';
+    body.style.padding = '0';
+    body.style.display = 'flex';
+    body.style.flexDirection = 'column';
+    body.innerHTML = `
+      <div class="pc-browser" style="height:100%">
+        <div class="pc-toolbar">
+          <button id="pcBack2">◀</button>
+          <button id="pcForward2">▶</button>
+          <button id="pcReload2">↻</button>
+          <button id="pcHome2">🏠</button>
+          <div class="pc-address"><span>🔒</span><input type="text" id="pcUrl2" value="google.com" inputmode="none" autocomplete="off"></div>
+          <button id="pcGo2">→</button>
+        </div>
+        <div class="pc-content" id="pcContent2"></div>
+      </div>`;
+    const content = body.querySelector('#pcContent2');
+    const urlInput = body.querySelector('#pcUrl2');
+
+    function showHome() {
+      content.innerHTML = `
+        <div class="pc-home">
+          <div class="pc-home-logo"><span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span></div>
+          <div class="pc-home-search">
+            <input type="text" id="pcHomeInput2" placeholder="${currentLang === 'ru' ? 'Поиск' : 'Search'}" inputmode="none" autocomplete="off">
+            <button id="pcHomeBtn2">${currentLang === 'ru' ? 'Поиск' : 'Search'}</button>
+          </div>
+        </div>`;
+      const inp = content.querySelector('#pcHomeInput2');
+      inp.dataset.focused = '1';
+      const go = () => navigate(inp.value);
+      content.querySelector('#pcHomeBtn2').onclick = (e) => { e.stopPropagation(); go(); };
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+    }
+
+    function navigate(q) {
+      q = q.trim(); if (!q) return;
+      const site = sites.find(s => s.name.toLowerCase() === q.toLowerCase());
+      if (site) { openSite(site); win.remove(); return; }
+      let url;
+      if (/^(https?:\/\/)?([\w-]+\.)+[\w-]+/.test(q)) url = q.startsWith('http') ? q : 'https://' + q;
+      else url = `https://www.bing.com/search?q=${encodeURIComponent(q)}`;
+      urlInput.value = url;
+      content.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'width:100%;height:100%;border:none;background:#fff;';
+      iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups';
+      iframe.src = url;
+      content.appendChild(iframe);
+    }
+
+    body.querySelector('#pcGo2').onclick = (e) => { e.stopPropagation(); navigate(urlInput.value); };
+    urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') navigate(urlInput.value); });
+    body.querySelector('#pcReload2').onclick = (e) => { e.stopPropagation(); navigate(urlInput.value); };
+    body.querySelector('#pcHome2').onclick = (e) => { e.stopPropagation(); showHome(); };
+    showHome();
+  }
+
+  function buildFirefox(body, win) {
+    win.style.width = '700px';
+    win.style.height = '520px';
+    body.style.padding = '0';
+    body.style.display = 'flex';
+    body.style.flexDirection = 'column';
+    body.innerHTML = `
+      <div class="pc-browser" style="height:100%">
+        <div class="pc-toolbar" style="background:linear-gradient(180deg,#ff9500,#ff5500);color:#fff">
+          <button id="ffBack" style="background:#fff;color:#000">◀</button>
+          <button id="ffForward" style="background:#fff;color:#000">▶</button>
+          <button id="ffReload" style="background:#fff;color:#000">↻</button>
+          <button id="ffHome" style="background:#fff;color:#000">🏠</button>
+          <div class="pc-address" style="background:#fff"><span>🦊</span><input type="text" id="ffUrl" value="firefox.com" inputmode="none" autocomplete="off"></div>
+          <button id="ffGo" style="background:#fff;color:#000">→</button>
+        </div>
+        <div class="pc-content" id="ffContent"></div>
+      </div>`;
+    const content = body.querySelector('#ffContent');
+    const urlInput = body.querySelector('#ffUrl');
+
+    function showHome() {
+      content.innerHTML = `
+        <div class="pc-home" style="background:linear-gradient(135deg,#ff9500,#ff5500)">
+          <div style="font-size:80px;margin-bottom:20px">🦊</div>
+          <h1 style="color:#fff;margin:0 0 20px;font-size:28px">Firefox</h1>
+          <div class="pc-home-search" style="max-width:400px">
+            <input type="text" id="ffHomeInput" placeholder="${currentLang === 'ru' ? 'Поиск' : 'Search'}" inputmode="none" autocomplete="off">
+            <button id="ffHomeBtn">${currentLang === 'ru' ? 'Поиск' : 'Search'}</button>
+          </div>
+        </div>`;
+      const inp = content.querySelector('#ffHomeInput');
+      inp.dataset.focused = '1';
+      const go = () => navigate(inp.value);
+      content.querySelector('#ffHomeBtn').onclick = (e) => { e.stopPropagation(); go(); };
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+    }
+
+    function navigate(q) {
+      q = q.trim(); if (!q) return;
+      const site = sites.find(s => s.name.toLowerCase() === q.toLowerCase());
+      if (site) { openSite(site); win.remove(); return; }
+      let url;
+      if (/^(https?:\/\/)?([\w-]+\.)+[\w-]+/.test(q)) url = q.startsWith('http') ? q : 'https://' + q;
+      else url = `https://duckduckgo.com/?q=${encodeURIComponent(q)}&t=h_`;
+      urlInput.value = url;
+      content.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'width:100%;height:100%;border:none;background:#fff;';
+      iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups';
+      iframe.src = url;
+      content.appendChild(iframe);
+    }
+
+    body.querySelector('#ffGo').onclick = (e) => { e.stopPropagation(); navigate(urlInput.value); };
+    urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') navigate(urlInput.value); });
+    body.querySelector('#ffReload').onclick = (e) => { e.stopPropagation(); navigate(urlInput.value); };
+    body.querySelector('#ffHome').onclick = (e) => { e.stopPropagation(); showHome(); };
+    body.querySelector('#ffBack').onclick = (e) => { e.stopPropagation(); showHome(); };
+    body.querySelector('#ffForward').onclick = (e) => { e.stopPropagation(); showHome(); };
+    showHome();
+  }
+
+  function buildTrash(body, win) {
+    body.style.padding = '0';
+    const tr = tObj('trash');
+    if (trashItems.length === 0) {
+      body.innerHTML = `
+        <div style="background:#fff;padding:20px;text-align:center;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div style="font-size:64px;margin-bottom:12px"><img src="assets/иконка_корзина.png" onerror="this.outerHTML='🗑️'" style="width:64px;height:64px"></div>
+          <div style="font-size:14px;color:#666">${tr.empty}</div>
+        </div>`;
+    } else {
+      body.innerHTML = `
+        <div class="xp-toolbar">
+          <button id="trashEmpty_${win.dataset.winId}">🗑 ${tr.clear}</button>
+          <button id="trashRestore_${win.dataset.winId}">↩ ${tr.restore}</button>
+        </div>
+        <div style="background:#fff;height:calc(100% - 30px);padding:4px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px;align-content:flex-start">
+          ${trashItems.map(item => `
+            <div class="xp-file" data-trash-id="${item.id}">
+              <div class="xf-ico">${item.icon ? `<img src="${item.icon}" onerror="this.parentNode.innerHTML='${item.fallback || '📄'}'">` : (item.fallback || '📄')}</div>
+              <div>${item.name}</div>
+            </div>`).join('')}
+        </div>`;
+
+      body.querySelector('#trashEmpty_' + win.dataset.winId).onclick = (e) => {
+        e.stopPropagation();
+        if (confirm(tr.confirmClear)) {
+          trashItems.length = 0;
+          syncSave();
+          renderDesktop(); buildTrash(body, win);
+        }
+      };
+
+      body.querySelector('#trashRestore_' + win.dataset.winId).onclick = (e) => {
+        e.stopPropagation();
+        trashItems.forEach(item => {
+          if (item.type === 'builtin') {
+            const idx = deletedIcons.indexOf(item.id);
+            if (idx !== -1) deletedIcons.splice(idx, 1);
+          } else if (item.type === 'file') userFiles.push(item);
+          else if (item.type === 'site') sites.push(item);
+          else if (item.type === 'downloaded') downloadedApps.push(item);
+          else if (item.type === 'userapp') userApps.push(item);
+          else if (item.type === 'installed') installedApps.push(item);
+        });
+        trashItems.length = 0;
+        syncSave();
+        renderDesktop(); buildTrash(body, win);
+      };
+
+      body.querySelectorAll('[data-trash-id]').forEach(el => {
+        el.onclick = () => {
+          const id = el.dataset.trashId;
+          const item = trashItems.find(t => t.id === id);
+          if (!item) return;
+          if (confirm(`${tr.confirmRestore} «${item.name}»?`)) {
+            const idx = trashItems.indexOf(item);
+            trashItems.splice(idx, 1);
+            if (item.type === 'builtin') {
+              const di = deletedIcons.indexOf(item.id);
+              if (di !== -1) deletedIcons.splice(di, 1);
+            } else if (item.type === 'file') userFiles.push(item);
+            else if (item.type === 'site') sites.push(item);
+            else if (item.type === 'downloaded') downloadedApps.push(item);
+            else if (item.type === 'userapp') userApps.push(item);
+            else if (item.type === 'installed') installedApps.push(item);
+            syncSave();
+            renderDesktop(); buildTrash(body, win);
+          }
+        };
+      });
+    }
+  }
+
+  // ===== МЕНЮ ПУСК =====
+  taskbarStart.onclick = (e) => {
+    e.stopPropagation();
+    startMenu.classList.toggle('open');
+    if (startMenu.classList.contains('open')) renderStartMenu();
+  };
+
+  function renderStartMenu() {
+    const left = document.getElementById('startLeft');
+    const right = document.getElementById('startRight');
+    left.innerHTML = ''; right.innerHTML = '';
+
+    const visibleApps = apps.filter(a => !deletedIcons.includes(a.id));
+    visibleApps.slice(0, 6).forEach(app => {
+      const el = document.createElement('div');
+      el.className = 'start-item';
+      const imgHtml = app.ico ? `<img src="${app.ico}" onerror="this.parentNode.innerHTML='${app.fallback}'" alt="">` : app.fallback;
+      el.innerHTML = `<div class="si-ico">${imgHtml}</div><div>${app.name}</div>`;
+      el.onclick = (e) => { e.stopPropagation(); startMenu.classList.remove('open'); openApp(app); };
+      left.appendChild(el);
+    });
+
+    const m = tObj('menu');
+    const rightItems = [
+      { icon:'📄', name:m.myDocs, action: () => openApp(apps.find(a=>a.id==='explorer')) },
+      { icon:'💻', name:m.myComputer, action: () => openApp(apps.find(a=>a.id==='computer')) },
+      { icon:'🌐', name:m.createSite, action: () => createSiteDialog() },
+      { icon:'🎮', name:m.createGame, action: () => openApp(apps.find(a=>a.id==='gamedev')) },
+      { icon:'💾', name:m.saveNow, action: () => { syncSave(); alert('💾 ' + t('system.saved')); } },
+      { icon:'⚙️', name:m.controlPanel, action: () => openApp(apps.find(a=>a.id==='wallpaper')) }
+    ];
+    rightItems.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'start-item';
+      el.innerHTML = `<div class="si-ico">${item.icon}</div><div>${item.name}</div>`;
+      el.onclick = (e) => { e.stopPropagation(); startMenu.classList.remove('open'); item.action(); };
+      right.appendChild(el);
+    });
+  }
+
+  document.getElementById('startShutdown').onclick = (e) => {
+    e.stopPropagation(); startMenu.classList.remove('open');
+    syncSave();
+    audioShutdown.play().catch(() => {});
+    const off = document.createElement('div'); off.className = 'shutdown-screen';
+    off.innerHTML = `<div class="spinner"></div><div>${currentLang === 'ru' ? 'Завершение работы Windows...' : 'Shutting down Windows...'}</div>`;
+    screen.appendChild(off);
+    setTimeout(() => off.remove(), 3000);
+  };
+  document.getElementById('startLogoff').onclick = (e) => {
+    e.stopPropagation(); startMenu.classList.remove('open'); syncSave();
+    alert(t('system.logoutDone'));
+  };
+
+  screen.addEventListener('mousedown', (e) => {
+    if (!e.target.closest('.start-menu') && !e.target.closest('.taskbar-start') && !e.target.closest('.icon-context-menu')) {
+      startMenu.classList.remove('open');
+    }
+  });
+
+  document.querySelectorAll('.taskbar-pin').forEach(pin => {
+    pin.onclick = (e) => {
+      e.stopPropagation();
+      const appId = pin.dataset.app;
+      const app = [...apps, ...downloadedApps].find(a => a.id === appId);
+      if (app) openApp(app);
+    };
+  });
+
+  document.getElementById('createAppBtn').onclick = (e) => {
+    e.stopPropagation();
+    const d = tObj('dialog');
+    const choice = prompt(`${d.createWhat}\n1 - ${d.app}\n2 - ${d.program}\n3 - ${d.site}`, '2');
+    if (choice === '3') { createSiteDialog(); return; }
+    if (choice === '2') {
+      const name = prompt(d.name + ':', currentLang === 'ru' ? 'Моя программа' : 'My program');
+      if (!name) return;
+      const code = prompt(d.htmlCode + ':', '<h1>Hello!</h1>');
+      installedApps.push({ id:'app_' + Date.now(), name, emoji:'📦', type:'html', content: code || '<h1>Empty</h1>', ext:'html' });
+      syncSave();
+      renderDesktop();
+      alert('✅ ' + t('system.programCreated'));
+      return;
+    }
+    const name = prompt(d.name + ':', currentLang === 'ru' ? 'Моё приложение' : 'My app');
+    if (!name) return;
+    const emoji = prompt(d.emoji + ':', '🚀') || '📦';
+    userApps.push({ id:'user_' + Date.now(), name, emoji, custom: true });
+    syncSave();
+    renderDesktop();
+  };
+
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a');
+    if (link && link.href) {
+      if (!link.href.startsWith('javascript:') && !link.href.startsWith('#') && !link.href.startsWith('blob:')) {
+        e.preventDefault();
+        e.stopPropagation();
+        openUrlInWindow(link.href);
+      }
+    }
+  }, true);
+
+  const originalOpen = window.open;
+  window.open = function(url, ...args) {
+    if (url) openUrlInWindow(url);
+    return null;
+  };
+
+  function getMinecraftHTML() {
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;overflow:hidden;background:#000;}</style></head><body><script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}<\/script><script type="module">
+import * as THREE from 'three';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x87CEEB);
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1000);camera.position.set(8,15,20);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);document.body.appendChild(renderer.domElement);
+scene.add(new THREE.AmbientLight(0xffffff,0.6));const sun=new THREE.DirectionalLight(0xffffff,1.0);sun.position.set(30,50,20);scene.add(sun);
+const SIZE=24,geometry=new THREE.BoxGeometry(1,1,1);
+const materials={grass:new THREE.MeshLambertMaterial({color:0x4caf50}),dirt:new THREE.MeshLambertMaterial({color:0x8b5a2b}),stone:new THREE.MeshLambertMaterial({color:0x777777})};
+const blocks=[],blockGrid=new Map();function key(x,y,z){return x+','+y+','+z;}
+function addBlock(x,y,z,t){const c=new THREE.Mesh(geometry,materials[t]||materials.dirt);c.position.set(x,y,z);scene.add(c);blocks.push(c);blockGrid.set(key(x,y,z),c);}
+for(let x=0;x<SIZE;x++)for(let z=0;z<SIZE;z++){const h=Math.floor(Math.sin(x*0.4)*2+Math.cos(z*0.4)*2+6);for(let y=0;y<=h;y++){addBlock(x,y,z,y===h?'grass':y>h-3?'dirt':'stone');}}
+const player={velocity:new THREE.Vector3(),onGround:false,yaw:0,pitch:0,height:1.7};
+function updateCamera(){camera.rotation.set(0,0,0);camera.rotateY(player.yaw);camera.rotateX(player.pitch);}
+const keys={};addEventListener('keydown',e=>{keys[e.code]=true;});addEventListener('keyup',e=>{keys[e.code]=false;});
+let pointerLocked=false;document.body.addEventListener('click',()=>{if(!pointerLocked)renderer.domElement.requestPointerLock();});
+document.addEventListener('pointerlockchange',()=>{pointerLocked=document.pointerLockElement===renderer.domElement;});
+addEventListener('mousemove',e=>{if(pointerLocked){player.yaw-=e.movementX*0.002;player.pitch-=e.movementY*0.002;player.pitch=Math.max(-1.5,Math.min(1.5,player.pitch));}});
+function isSolid(x,y,z){return blockGrid.has(key(Math.round(x),Math.round(y),Math.round(z)));}
+function collides(px,py,pz){const r=0.3;for(let dx of[-r,r])for(let dz of[-r,r])for(let dy of[0,player.height]){if(isSolid(px+dx,py+dy,pz+dz))return true;}return false;}
+const GRAVITY=25,MOVE_SPEED=5,JUMP=8;let lastTime=performance.now();
+function update(dt){const f=new THREE.Vector3(-Math.sin(player.yaw),0,-Math.cos(player.yaw));const r=new THREE.Vector3(Math.cos(player.yaw),0,-Math.sin(player.yaw));const d=new THREE.Vector3();if(keys['KeyW'])d.add(f);if(keys['KeyS'])d.sub(f);if(keys['KeyD'])d.add(r);if(keys['KeyA'])d.sub(r);if(d.length()>0)d.normalize().multiplyScalar(MOVE_SPEED);const nx=camera.position.x+d.x*dt;if(!collides(nx,camera.position.y-player.height/2,camera.position.z))camera.position.x=nx;const nz=camera.position.z+d.z*dt;if(!collides(camera.position.x,camera.position.y-player.height/2,nz))camera.position.z=nz;if(keys['Space']&&player.onGround){player.velocity.y=JUMP;player.onGround=false;}player.velocity.y-=GRAVITY*dt;const ny=camera.position.y+player.velocity.y*dt;if(!collides(camera.position.x,ny-player.height/2,camera.position.z)){camera.position.y=ny;player.onGround=false;}else{if(player.velocity.y<0){camera.position.y=Math.ceil(camera.position.y-player.height/2)+player.height/2;player.onGround=true;}player.velocity.y=0;}updateCamera();}
+function animate(){requestAnimationFrame(animate);const now=performance.now();const dt=Math.min((now-lastTime)/1000,0.05);lastTime=now;update(dt);renderer.render(scene,camera);}animate();
+<\/script></body></html>`;
+  }
+
+  // ===== ЯЗЫК =====
+  function updateLanguageUI() {
+    document.getElementById('txtStart').textContent = t('start');
+    document.getElementById('startUserName').textContent = t('user');
+    document.getElementById('txtLogoff').textContent = t('logoff');
+    document.getElementById('txtShutdown').textContent = t('shutdown');
+    document.getElementById('txtCreate').textContent = t('create');
+    document.getElementById('txtKeyboard').textContent = t('keyboard');
+    document.getElementById('langFlag').textContent = currentLang === 'ru' ? '🇷🇺' : '🇺🇸';
+    document.getElementById('langCode').textContent = currentLang === 'ru' ? 'RU' : 'EN';
+    buildKeyboard();
+    renderDesktop();
+  }
+
+  document.getElementById('langBtn').onclick = (e) => {
+    e.stopPropagation();
+    currentLang = currentLang === 'ru' ? 'en' : 'ru';
+    localStorage.setItem('windows34_lang', currentLang);
+    updateLanguageUI();
+  };
+
+  function restoreWallpaper() {
+    if (save.customWallpaper) {
+      screen.style.backgroundImage = `url(${save.customWallpaper})`;
+    } else {
+      screen.style.backgroundImage = wallpapers[wpIndex].startsWith('assets/')
+        ? `url(${wallpapers[wpIndex]})` : wallpapers[wpIndex];
+    }
+    screen.style.backgroundSize = 'cover';
+  }
+
+  // ===== СТАРТ =====
+  createWhatsNewFile();
+  restoreWallpaper();
+  renderDesktop();
+  updateLanguageUI();
+
+  if (!localStorage.getItem('windows34_whatsnew_shown')) {
+    localStorage.setItem('windows34_whatsnew_shown', '1');
+    setTimeout(() => {
+      const file = userFiles.find(f => f.name === 'ЧТО_НОВОГО.txt');
+      if (file) openFile(file);
+    }, 1500);
+  }
+
+  setInterval(syncSave, 30000);
+  window.addEventListener('beforeunload', syncSave);
+  screen.addEventListener('contextmenu', e => e.preventDefault());
+})();
+</script>
+</body>
+</html>
