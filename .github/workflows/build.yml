@@ -32,8 +32,11 @@ jobs:
       - name: Install cargo-ndk
         run: cargo install cargo-ndk
 
+      # ВОТ ЗДЕСЬ ИСПРАВЛЕНИЕ: добавили packages: ''
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: ''
 
       - name: Setup Tauri CLI
         run: cargo install tauri-cli --version "^2" --locked
