@@ -1,10 +1,40 @@
-/target
-/node_modules
-/dist-ssr
-*.log
+# Временные и копии
+*~
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+*.temp
+*.swp
+*.swo
+*.save
+
+# Копии в стиле Windows: "file (1).png", "file (2).txt"
+* (*).*
+*([0-9]).*
+* - копия.*
+* - Copy.*
+* copy.*
+
+# Копии в стиле macOS
+._*
 .DS_Store
-src-tauri/target
-src-tauri/gen/android/app/build
-src-tauri/gen/android/.gradle
-src-tauri/gen/android/build
-src-tauri/gen/android/local.properties
+
+# Копии в стиле Linux
+*.tar.gz
+*.zip
+
+# Копии папок
+*-old/
+*-backup/
+*-copy/
+backup/
+old/
+
+# Игнор сборки
+/target
+/src-tauri/target
+/node_modules
+/dist
+/build
