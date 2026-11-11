@@ -40,6 +40,19 @@ jobs:
       - name: Setup Tauri CLI
         run: cargo install tauri-cli --version "^2" --locked
 
+      # ВОТ ЭТОТ ШАГ ГЕНЕРИРУЕТ ИКОНКИ
+      - name: Generate Icons
+        working-directory: src-tauri
+        run: |
+          # Если нет папки icons, создаем её
+          mkdir -p icons
+          # Если нет исходной иконки, скачаем дефолтную (1024x1024)
+          if [ ! -f "app-icon.png" ]; then
+            curl -L "https://github.com/tauri-apps/tauri/raw/dev/.github/logo.png" -o app-icon.png
+          fi
+          # Генерируем все нужные размеры
+          cargo tauri icon app-icon.png
+
       - name: Init Android project if missing
         working-directory: src-tauri
         env:
