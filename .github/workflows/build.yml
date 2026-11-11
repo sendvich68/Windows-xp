@@ -1,4 +1,4 @@
-name: Build APK
+name: Build and Release APK
 
 on:
   push:
@@ -40,11 +40,9 @@ jobs:
       - name: Setup Tauri CLI
         run: cargo install tauri-cli --version "^2" --locked
 
-      # ТЕПЕРЬ МЫ БЕРЕМ ТВОЮ ИКОНКУ
       - name: Generate Icons from existing icon.png
         working-directory: src-tauri
         run: |
-          echo "Генерируем иконки из icons/icon.png..."
           cargo tauri icon icons/icon.png
 
       - name: Init Android project if missing
@@ -53,10 +51,7 @@ jobs:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
           if [ ! -d "gen/android" ]; then
-            echo "⚙️  Android project not found — generating..."
             cargo tauri android init --ci
-          else
-            echo "✅ Android project exists"
           fi
 
       - name: Build APK
@@ -67,8 +62,24 @@ jobs:
         run: |
           cargo tauri android build --apk --ci
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Sign APK
+        run: |
+          # Генерируем ключ
+          keytool -genkey -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias mykey -storepass 123456 -keypass 123456 -dname "CN=Windows34, OU=Dev, O=Dev, L=City, S=State, C=US"
+          
+          # Ищем собранный APK
+          APK=$(find src-tauri/gen/android/app/build/outputs/apk/universal/release/ -name "*.apk" | head -n 1)
+          
+          # Подписываем
+          $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks my-release-key.jks --ks-pass pass:123456 --key-pass pass:123456 --out Windows34.apk $APK
+
+      # ВОТ ЗДЕСЬ МАГИЯ: создаем релиз и прикрепляем файл
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: windows34-apk
-          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          tag_name: "v2.3.0"
+          name: "Windows 34 APK"
+          body: "Автоматическая сборка APK"
+          files: Windows34.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
