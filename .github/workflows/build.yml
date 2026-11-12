@@ -1,4 +1,4 @@
-name: Build and Release APK
+name: Build APK
 
 on:
   push:
@@ -64,22 +64,13 @@ jobs:
 
       - name: Sign APK
         run: |
-          # Генерируем ключ
           keytool -genkey -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias mykey -storepass 123456 -keypass 123456 -dname "CN=Windows34, OU=Dev, O=Dev, L=City, S=State, C=US"
-          
-          # Ищем собранный APK
           APK=$(find src-tauri/gen/android/app/build/outputs/apk/universal/release/ -name "*.apk" | head -n 1)
-          
-          # Подписываем
-          $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks my-release-key.jks --ks-pass pass:123456 --key-pass pass:123456 --out Windows34.apk $APK
+          $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks my-release-key.jks --ks-pass pass:123456 --key-pass pass:123456 --out app-signed.apk $APK
 
-      # ВОТ ЗДЕСЬ МАГИЯ: создаем релиз и прикрепляем файл
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      # ВОТ ЗДЕСЬ МЫ ПРОСТО ОТДАЕМ ФАЙЛ
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: "v2.3.0"
-          name: "Windows 34 APK"
-          body: "Автоматическая сборка APK"
-          files: Windows34.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: Windows34-APK
+          path: app-signed.apk
